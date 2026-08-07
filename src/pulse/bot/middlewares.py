@@ -30,9 +30,22 @@ class RateLimitMiddleware(BaseMiddleware):
             return await handler(event, data)
 
         text = raw_text.strip()
-        # Allow /start, /help, /myword without rate/window limiting
-        if text.startswith(("/start", "/help", "/myword")):
+        # Allow /start, /help, /myword and admin commands without rate/window limiting
+        if text.startswith(
+            (
+                "/start",
+                "/help",
+                "/myword",
+                "/show_words",
+                "/words",
+                "/show_news",
+                "/news",
+                "/brief",
+                "/force_brief",
+            )
+        ):
             return await handler(event, data)
+
 
         msk_now = datetime.now(timezone.utc).astimezone(MSK_TZ)
         today_date_str = msk_now.strftime("%Y-%m-%d")
