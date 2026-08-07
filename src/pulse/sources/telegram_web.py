@@ -1,5 +1,6 @@
 """Telegram Public Web Channel source adapter."""
 
+import hashlib
 import re
 from datetime import datetime, timezone
 
@@ -33,7 +34,7 @@ class TelegramChannelAdapter(BaseSourceAdapter):
         """Fetch latest posts from Telegram public web preview.
 
         Returns:
-            list[NewsArticle]: Parsed news articles.
+            list[NewsArticle]: Parsed news articles with unique URLs.
         """
         articles: list[NewsArticle] = []
         try:
@@ -50,7 +51,7 @@ class TelegramChannelAdapter(BaseSourceAdapter):
                     re.DOTALL,
                 )
 
-                for raw_post in matches:
+                for _idx, raw_post in enumerate(matches, 1):
                     clean_text = re.sub(r"<[^>]+>", " ", raw_post)
                     clean_text = " ".join(clean_text.split()).strip()
                     if not clean_text or len(clean_text) < 15:
@@ -63,13 +64,17 @@ class TelegramChannelAdapter(BaseSourceAdapter):
                         headline = f"{headline}. {parts[1].strip()}"
                     headline = headline[:150]
 
-                    post_url = f"https://t.me/{self.channel_name}"
+                    # Unique URL per post via MD5 hash to prevent Supabase overwrites
+                    post_hash = hashlib.md5(clean_text.encode("utf-8")).hexdigest()[:10]
+                    unique_post_url = f"https://t.me/s/{self.channel_name}#{post_hash}"
+
+
                     articles.append(
                         NewsArticle(
                             source_id=self.source_id,
                             headline=headline,
                             summary=clean_text[:300],
-                            url=post_url,
+                            url=unique_post_url,
                             published_at=datetime.now(timezone.utc),
                         )
                     )
