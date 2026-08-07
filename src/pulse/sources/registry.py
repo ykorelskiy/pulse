@@ -3,6 +3,7 @@
 from pulse.config import get_config
 from pulse.sources.base import BaseSourceAdapter
 from pulse.sources.rss import RSSSourceAdapter
+from pulse.sources.telegram_web import TelegramChannelAdapter
 
 
 class SourceRegistry:
@@ -26,12 +27,21 @@ class SourceRegistry:
         cfg = get_config()
         for item in cfg.sources.sources:
             if item.get("enabled", True):
-                adapter = RSSSourceAdapter(
-                    source_id=item["id"],
-                    feed_url=item["url"],
-                    name=item.get("name", item["id"]),
-                    category=item.get("category", "general"),
-                )
+                stype = item.get("type", "rss")
+                if stype == "telegram" or "channel_name" in item:
+                    adapter = TelegramChannelAdapter(
+                        source_id=item["id"],
+                        channel_name=item.get("channel_name", item.get("url", "")),
+                        name=item.get("name", item["id"]),
+                        category=item.get("category", "ru_hot"),
+                    )
+                else:
+                    adapter = RSSSourceAdapter(
+                        source_id=item["id"],
+                        feed_url=item["url"],
+                        name=item.get("name", item["id"]),
+                        category=item.get("category", "general"),
+                    )
                 registry.register(adapter)
 
         return registry

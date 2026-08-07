@@ -64,23 +64,38 @@ sources:
     enabled: true
 
   # Категория Б: RU — «горячее»/скандальное/таблоид/эксклюзивы (30%)
-  - id: mash_news
-    name: "Mash — Эксклюзивы и происшествия"
-    url: "https://mash.ru/rss"
+  - id: mash_telegram
+    name: "Mash — Эксклюзивы и расследования"
+    type: "telegram"
+    channel_name: "mash"
+    url: "https://t.me/s/mash"
     category: "ru_hot"
     weight: 0.30
     enabled: true
 
-  - id: fontanka_news
-    name: "Фонтанка.ру — Новости и расследования"
-    url: "https://www.fontanka.ru/fontanka.xml"
+  - id: fontanka_telegram
+    name: "Фонтанка.ру — Главные новости Петербурга"
+    type: "telegram"
+    channel_name: "fontankaspb"
+    url: "https://t.me/s/fontankaspb"
     category: "ru_hot"
     weight: 0.30
     enabled: true
 
-  - id: fontanka_rss
-    name: "Фонтанка.ру — Лента"
-    url: "https://www.fontanka.ru/rss.xml"
+  - id: readovka_telegram
+    name: "Readovka — Острые темы"
+    type: "telegram"
+    channel_name: "readovkanews"
+    url: "https://t.me/s/readovkanews"
+    category: "ru_hot"
+    weight: 0.30
+    enabled: true
+
+  - id: baza_telegram
+    name: "Baza — Эксклюзивы"
+    type: "telegram"
+    channel_name: "baza"
+    url: "https://t.me/s/baza"
     category: "ru_hot"
     weight: 0.30
     enabled: true
@@ -88,20 +103,6 @@ sources:
   - id: life_news
     name: "Life.ru — Происшествия и эксклюзивы"
     url: "https://life.ru/rss"
-    category: "ru_hot"
-    weight: 0.30
-    enabled: true
-
-  - id: readovka_news
-    name: "Readovka — Острые темы"
-    url: "https://readovka.news/rss"
-    category: "ru_hot"
-    weight: 0.30
-    enabled: true
-
-  - id: lenta_social
-    name: "Лента.ру — Происшествия и Общество"
-    url: "https://lenta.ru/rss/news/social"
     category: "ru_hot"
     weight: 0.30
     enabled: true
