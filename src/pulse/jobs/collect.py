@@ -24,8 +24,8 @@ async def process_pending_scoring(repo: NewsRepo, curator: LLMCurator, clusterer
         logger.info("scoring_iteration", iteration=iteration, pending_count=len(pending_items))
         recent_24h = repo.get_scored_24h_news()
 
-        # Process in micro-batches of 15 items
-        batch_size = 15
+        # Process in micro-batches of 50 items (larger batches = fewer API calls)
+        batch_size = 50
         for i in range(0, len(pending_items), batch_size):
             batch = pending_items[i:i + batch_size]
             scored_results = curator.score_batch(batch)
@@ -59,7 +59,7 @@ async def process_pending_scoring(repo: NewsRepo, curator: LLMCurator, clusterer
                 repo.update_scored_article(item_id, update_data)
                 total_scored += 1
 
-            await asyncio.sleep(2.0)
+            await asyncio.sleep(5.0)
 
     logger.info("microbatch_scoring_completed", count=total_scored)
     return total_scored

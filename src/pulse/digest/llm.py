@@ -121,7 +121,7 @@ class LLMCurator:
                             "contents": [{"parts": [{"text": prompt}]}],
                             "generationConfig": {"response_mime_type": "application/json"},
                         },
-                        timeout=20.0,
+                        timeout=45.0,
                     )
 
                     if response.status_code == 200:
@@ -132,12 +132,13 @@ class LLMCurator:
                             logger.info("gemini_batch_scoring_success", model=model, count=len(parsed))
                             return parsed
                     elif response.status_code == 429:
-                        logger.warning("gemini_rate_limit_429", model=model, retry=retry)
-                        time.sleep(3.0 * (retry + 1))
+                        wait_time = 5.0 * (retry + 1)
+                        logger.warning("gemini_rate_limit_429", model=model, retry=retry, wait=wait_time)
+                        time.sleep(wait_time)
                         continue
                 except Exception as e:
                     logger.warning("gemini_batch_scoring_attempt_failed", model=model, error=str(e))
-                    time.sleep(1.5)
+                    time.sleep(3.0)
 
         logger.error("gemini_batch_scoring_failed_using_heuristic")
         return self._heuristic_batch_scoring(items)
