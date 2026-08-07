@@ -246,6 +246,7 @@ class LLMCurator:
         scored_candidates = []
         for cand in all_candidates:
             h = cand["headline"]
+            cat_t = cand.get("category_title", "")
             for en_key, ru_val in translations_dict.items():
                 if en_key.lower() in h.lower():
                     h = ru_val
@@ -253,6 +254,10 @@ class LLMCurator:
                     break
 
             score = 50
+            # Boost viral and tech categories base score
+            if "вирус" in cat_t.lower() or "технолог" in cat_t.lower():
+                score += 25
+
             for stop in stop_words:
                 if stop in h.lower():
                     score -= 40
@@ -261,6 +266,7 @@ class LLMCurator:
                     score += 50
 
             scored_candidates.append((score, cand))
+
 
         scored_candidates.sort(key=lambda x: x[0], reverse=True)
 
