@@ -53,21 +53,16 @@ class BriefBuilder:
         if top_10_curated and isinstance(top_10_curated, list):
             for idx, item in enumerate(top_10_curated, 1):
                 headline = item.get("headline", "")
-                src = item.get("source_name", "новости")
-                cat_t = item.get("category_title", "")
                 url = item.get("url", "#")
-                prefix = f"{cat_t} | {src}" if cat_t else src
-                lines.append(f"  {idx}. [{prefix}] **«{headline}»** — [источник]({url})")
+                lines.append(f"  {idx}. **«{headline}»** — [источник]({url})")
         elif has_items:
-
             count = 1
             for cat in cat_data:
                 for item in cat.get("items", []):
                     if count <= 10:
                         headline = item.get("headline", "")
-                        src = item.get("source_name", "новости")
                         url = item.get("url", "#")
-                        lines.append(f"  {count}. [{src}] **«{headline}»** — [источник]({url})")
+                        lines.append(f"  {count}. **«{headline}»** — [источник]({url})")
                         count += 1
         lines.append("")
 
@@ -92,16 +87,14 @@ class BriefBuilder:
                 lines.append(f"\n{icon} **{title} ({weight}):**")
                 for idx, item in enumerate(items, 1):
                     headline = item.get("headline", "")
-                    src = item.get("source_name", "новости")
                     url = item.get("url", "#")
-                    lines.append(f"  {idx}. [{src}] **«{headline}»** — [источник]({url})")
+                    lines.append(f"  {idx}. **«{headline}»** — [источник]({url})")
         else:
             for item in cat_data:
                 if isinstance(item, dict):
                     headline = item.get("headline", item.get("phrase", ""))
-                    src = item.get("source_id", "новости")
                     url = item.get("url", "#")
-                    lines.append(f"  • [{src}] **«{headline}»** — [источник]({url})")
+                    lines.append(f"  • **«{headline}»** — [источник]({url})")
                 else:
                     lines.append(f"  • **«{item}»**")
         lines.append("")
