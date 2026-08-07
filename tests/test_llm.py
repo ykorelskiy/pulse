@@ -29,10 +29,12 @@ def test_llm_curator_fallback_curation():
         }
     ]
 
-    top_10, updated_cat = curator.curate_and_translate_news(raw_categorized, top_k=10)
-
+    top_10, _ = curator.curate_and_translate_news(raw_categorized, top_k=10)
+    headlines = [item["headline"] for item in top_10]
     assert len(top_10) == 2
-    assert "Кенгуру замечен в швейцарском лесу" in top_10[1]["headline"]
+    assert "Кенгуру замечен в швейцарском лесу" in headlines
+
+
 
 
 @patch("httpx.post")

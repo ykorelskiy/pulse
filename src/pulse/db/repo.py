@@ -1,5 +1,6 @@
 """Supabase Repositories layer with persistent local JSON fallback storage."""
 
+import contextlib
 import json
 from datetime import datetime, timezone
 from decimal import Decimal
@@ -191,13 +192,15 @@ class NewsRepo(BaseRepo):
         published_at: str | None = None,
         summary: str = "",
     ) -> dict[str, Any]:
-        data = {
+        data: dict[str, Any] = {
             "source_id": source_id,
             "headline": headline,
             "url": url,
             "published_at": published_at,
-            "summary": summary,
         }
+        if summary:
+            data["summary"] = summary
+
         if not self.client:
             return data
 
@@ -205,7 +208,14 @@ class NewsRepo(BaseRepo):
             res = self.client.table("news_items").upsert(data, on_conflict="url").execute()
             return res.data[0] if res.data else data
         except Exception:
+            # Fallback without summary if schema mismatch occurs
+            if "summary" in data:
+                data.pop("summary")
+                with contextlib.suppress(Exception):
+                    res = self.client.table("news_items").upsert(data, on_conflict="url").execute()
+                    return res.data[0] if res.data else data
             return data
+
 
 
 
