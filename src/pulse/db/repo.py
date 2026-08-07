@@ -184,6 +184,33 @@ class NewsRepo(BaseRepo):
         except Exception:
             return data
 
+    @staticmethod
+    def clean_url(url: str) -> str:
+        """Strip UTM parameters and tracking query strings from URL."""
+        if not url:
+            return url
+        import urllib.parse as urlparse
+        parsed = urlparse.urlparse(url)
+        query = urlparse.parse_qsl(parsed.query)
+        filtered_query = [
+            (k, v) for k, v in query
+            if not k.startswith("utm_") and k not in ("fbclid", "gclid", "yclid", "ref")
+        ]
+        new_query = urlparse.urlencode(filtered_query)
+        cleaned = urlparse.urlunparse((
+            parsed.scheme, parsed.netloc, parsed.path,
+            parsed.params, new_query, parsed.fragment
+        ))
+        return cleaned
+
+    @staticmethod
+    def compute_headline_hash(headline: str) -> str:
+        """Compute MD5 hash of normalized headline (lowercase, trimmed, collapsed spaces)."""
+        import hashlib
+        import re
+        normalized = re.sub(r"\s+", " ", headline.lower().strip())
+        return hashlib.md5(normalized.encode("utf-8")).hexdigest()
+
     def add_article(
         self,
         source_id: str,
@@ -192,11 +219,16 @@ class NewsRepo(BaseRepo):
         published_at: str | None = None,
         summary: str = "",
     ) -> dict[str, Any]:
+        clean_u = self.clean_url(url)
+        h_hash = self.compute_headline_hash(headline)
+
         data: dict[str, Any] = {
             "source_id": source_id,
             "headline": headline,
-            "url": url,
+            "headline_hash": h_hash,
+            "url": clean_u,
             "published_at": published_at,
+            "status": "pending",
         }
         if summary:
             data["summary"] = summary
@@ -205,19 +237,106 @@ class NewsRepo(BaseRepo):
             return data
 
         try:
-            res = self.client.table("news_items").upsert(data, on_conflict="url").execute()
+            # Dual deduplication check
+            # 1. By URL
+            existing_url = (
+                self.client.table("news_items")
+                .select("*")
+                .eq("url", clean_u)
+                .limit(1)
+                .execute()
+            )
+            if existing_url and getattr(existing_url, "data", None):
+                return existing_url.data[0]
+
+            # 2. By (source_id, headline_hash)
+            existing_headline = (
+                self.client.table("news_items")
+                .select("*")
+                .eq("source_id", source_id)
+                .eq("headline_hash", h_hash)
+                .limit(1)
+                .execute()
+            )
+            if existing_headline and getattr(existing_headline, "data", None):
+                return existing_headline.data[0]
+
+            res = self.client.table("news_items").insert(data).execute()
             return res.data[0] if res.data else data
         except Exception:
-            # Fallback without summary if schema mismatch occurs
-            if "summary" in data:
-                data.pop("summary")
-                with contextlib.suppress(Exception):
-                    res = self.client.table("news_items").upsert(data, on_conflict="url").execute()
-                    return res.data[0] if res.data else data
+            # Fallback upsert if insert raises constraint error
+            with contextlib.suppress(Exception):
+                res = self.client.table("news_items").upsert(data, on_conflict="url").execute()
+                return res.data[0] if res.data else data
             return data
 
+    def get_pending_news(self, limit: int = 50) -> list[dict[str, Any]]:
+        """Fetch news items waiting for LLM scoring."""
+        if not self.client:
+            return []
+        try:
+            res = (
+                self.client.table("news_items")
+                .select("*")
+                .eq("status", "pending")
+                .order("collected_at", desc=True)
+                .limit(limit)
+                .execute()
+            )
+            return res.data or []
+        except Exception:
+            return []
 
+    def get_scored_24h_news(self) -> list[dict[str, Any]]:
+        """Fetch all scored news items from the floating last 24 hours."""
+        if not self.client:
+            return []
+        try:
+            now_iso = datetime.now(timezone.utc).isoformat()
+            res = (
+                self.client.table("news_items")
+                .select("*")
+                .gte("collected_at", now_iso)
+                .execute()
+            )
+            if res and getattr(res, "data", None):
+                return res.data
+        except Exception:
+            pass
+        return self.get_latest_news(limit=200)
 
+    def update_scored_article(self, article_id: str, update_data: dict[str, Any]) -> None:
+        """Update scored article fields in Supabase."""
+        if not self.client:
+            return
+        try:
+            self.client.table("news_items").update(update_data).eq("id", article_id).execute()
+        except Exception:
+            pass
+
+    def mark_items_used_and_archived(
+        self,
+        issue_id: str,
+        used_ids: list[str],
+        archived_ids: list[str],
+    ) -> None:
+        """Mark winner items as 'used' and remaining cluster items as 'archived'."""
+        if not self.client:
+            return
+        try:
+            if used_ids:
+                self.client.table("news_items").update({
+                    "status": "used",
+                    "used_in_issue_id": issue_id,
+                }).in_("id", used_ids).execute()
+
+            if archived_ids:
+                self.client.table("news_items").update({
+                    "status": "archived",
+                    "used_in_issue_id": issue_id,
+                }).in_("id", archived_ids).execute()
+        except Exception:
+            pass
 
     def get_latest_news(self, limit: int = 10) -> list[dict[str, Any]]:
         if not self.client:

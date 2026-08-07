@@ -1,10 +1,10 @@
-"""Topic ranker for categorizing, scoring, and source statistics."""
+"""Topic ranker implementing deterministic SQL window ranking & cluster selection (TZ v2)."""
 
 import contextlib
-from collections import Counter
+from datetime import datetime, timezone
 from typing import Any
 
-from pulse.config import CATEGORIES_INFO, CATEGORY_FALLBACKS
+from pulse.config import CATEGORIES_INFO
 from pulse.db.repo import NewsRepo, WordsRepo
 from pulse.digest.llm import LLMCurator
 from pulse.sources.registry import SourceRegistry
@@ -19,8 +19,7 @@ def extract_key_phrase(headline: str) -> str:
 
 
 class TopicRanker:
-
-    """Ranks and categorizes collected news, generating source statistics."""
+    """Ranks collected news deterministically using TZ v2 scoring parameters."""
 
     def __init__(
         self,
@@ -37,27 +36,136 @@ class TopicRanker:
         items_per_category: int = 10,
         top_k: int = 10,
     ) -> tuple[list[dict[str, str]], list[dict[str, Any]], list[dict[str, Any]]]:
-        """Neural curation returning TOP-10, TOP-50 flat list, and source statistics.
+        """Deterministic ranking returning TOP-10, TOP-50 flat list, and source statistics.
 
         Returns:
             tuple[list[dict[str, str]], list[dict[str, Any]], list[dict[str, Any]]]:
-                - Top 10 neural-selected news headlines with source and url
+                - Top 10 neural-scored and SQL-ranked news items
                 - Top 50 candidate news headlines flat list
                 - Source audit statistics (analyzed, in_top_50, in_top_10)
         """
-        categorized_raw, source_stats_map, flat_top_50 = self.get_categorized_news_and_stats(
-            items_per_category=items_per_category,
-            top_50_limit=50,
-        )
+        source_map: dict[str, str] = {}
+        source_stats_map: dict[str, dict[str, Any]] = {}
 
-        top_10, _ = self.curator.curate_and_translate_news(categorized_raw, top_k=top_k)
+        with contextlib.suppress(Exception):
+            registry = SourceRegistry.load_from_config()
+            for adapter in registry.get_all():
+                sname = getattr(adapter, "name", adapter.source_id)
+                source_map[adapter.source_id] = sname
+                source_stats_map[sname] = {
+                    "name": sname,
+                    "analyzed": 0,
+                    "in_top_50": 0,
+                    "in_top_10": 0,
+                }
 
-        # Update in_top_10 count in source_stats_map
-        for item in top_10:
-            src_name = item.get("source_name", "")
-            if src_name in source_stats_map:
-                source_stats_map[src_name]["in_top_10"] += 1
+        raw_items = self.news_repo.get_scored_24h_news()
+        if not raw_items:
+            raw_items = self.news_repo.get_latest_news(limit=200)
 
+        now = datetime.now(timezone.utc)
+
+        # First pass: group by cluster to calculate breadth_score
+        cluster_sources: dict[str, set[str]] = {}
+        for item in raw_items:
+            cid = str(item.get("cluster_id") or item.get("id"))
+            sid = str(item.get("source_id") or "news")
+            if cid not in cluster_sources:
+                cluster_sources[cid] = set()
+            cluster_sources[cid].add(sid)
+
+        scored_items: list[tuple[float, dict[str, Any]]] = []
+        seen_headlines: set[str] = set()
+
+        for item in raw_items:
+            # Skip victims
+            if item.get("has_victims") or item.get("status") == "rejected_victims":
+                continue
+
+            headline = (item.get("ru_headline") or item.get("headline") or "").strip()
+            if not headline or headline.lower() in seen_headlines:
+                continue
+
+            seen_headlines.add(headline.lower())
+            sid = str(item.get("source_id") or "news")
+            sname = source_map.get(sid, sid)
+
+            if sname not in source_stats_map:
+                source_stats_map[sname] = {
+                    "name": sname,
+                    "analyzed": 0,
+                    "in_top_50": 0,
+                    "in_top_10": 0,
+                }
+            source_stats_map[sname]["analyzed"] += 1
+
+            # Calculate Scores
+            rel = item.get("relevance") or 3
+            comedic = item.get("comedic_potential") or 2
+            sig = item.get("significance") or 2
+            tone = item.get("tone") or 0
+            quality_score = rel + comedic + sig + tone
+
+            cid = str(item.get("cluster_id") or item.get("id"))
+            breadth_score = min(len(cluster_sources.get(cid, {sid})), 5)
+
+            # Freshness score: 6 minus 1 per 4 hours
+            coll_at = item.get("collected_at")
+            hours_old = 0.0
+            if coll_at:
+                try:
+                    if isinstance(coll_at, str):
+                        dt = datetime.fromisoformat(coll_at.replace("Z", "+00:00"))
+                    else:
+                        dt = coll_at
+                    hours_old = (now - dt).total_seconds() / 3600.0
+                except Exception:
+                    hours_old = 0.0
+
+            freshness_score = max(0, 6 - int(hours_old / 4.0))
+
+            total_score = quality_score + breadth_score + freshness_score
+            item_copy = dict(item)
+            item_copy["headline"] = headline
+            item_copy["source_name"] = sname
+            item_copy["total_score"] = total_score
+            item_copy["cluster_id"] = cid
+
+            scored_items.append((total_score, item_copy))
+
+        # Sort by total_score desc
+        scored_items.sort(key=lambda x: x[0], reverse=True)
+
+        # Deduplicate clusters (1 best item per cluster_id)
+        cluster_seen: set[str] = set()
+        deduped_items: list[dict[str, Any]] = []
+
+        for score, item in scored_items:
+            cid = item["cluster_id"]
+            if cid not in cluster_seen:
+                cluster_seen.add(cid)
+                deduped_items.append(item)
+
+        # Top 10 selection
+        top_10_raw = deduped_items[:top_k]
+        top_10: list[dict[str, str]] = []
+        for item in top_10_raw:
+            top_10.append({
+                "headline": item["headline"],
+                "source_name": item["source_name"],
+                "url": item.get("url", "#"),
+                "category_title": "Главные новости дня",
+            })
+            sname = item["source_name"]
+            if sname in source_stats_map:
+                source_stats_map[sname]["in_top_10"] += 1
+
+        # Top 50 flat candidate list (100% translated)
+        flat_top_50 = deduped_items[:50]
+        for item in flat_top_50:
+            sname = item["source_name"]
+            if sname in source_stats_map:
+                source_stats_map[sname]["in_top_50"] += 1
 
         source_stats_list = list(source_stats_map.values())
         source_stats_list.sort(key=lambda x: x["analyzed"], reverse=True)
@@ -69,161 +177,50 @@ class TopicRanker:
         items_per_category: int = 10,
         top_50_limit: int = 50,
     ) -> tuple[list[dict[str, Any]], dict[str, dict[str, Any]], list[dict[str, Any]]]:
-        """Extract categorized news, build top 50 flat list and source statistics."""
-        source_map: dict[str, dict[str, str]] = {}
-        source_stats_map: dict[str, dict[str, Any]] = {}
-
-        with contextlib.suppress(Exception):
-            registry = SourceRegistry.load_from_config()
-            for adapter in registry.get_all():
-                sname = getattr(adapter, "name", adapter.source_id)
-                source_map[adapter.source_id] = {
-                    "category": getattr(adapter, "category", "ru_news"),
-                    "name": sname,
-                }
-                source_stats_map[sname] = {
-                    "name": sname,
-                    "analyzed": 0,
-                    "in_top_50": 0,
-                    "in_top_10": 0,
-                }
-
-        collected_articles: list[dict[str, Any]] = []
-        with contextlib.suppress(Exception):
-            collected_articles = self.news_repo.get_latest_news(limit=500)
-
-        categorized_buckets: dict[str, list[dict[str, str]]] = {
-            cat["code"]: [] for cat in CATEGORIES_INFO
-        }
-        seen_headlines: set[str] = set()
-        flat_top_50: list[dict[str, Any]] = []
-
-        for art in collected_articles:
-            headline = art.get("headline", "").strip() if art.get("headline") else ""
-            url = art.get("url", "#")
-            summary = (art.get("summary") or "").strip()
-            source_id = art.get("source_id", "")
-
-            if not headline:
-                continue
-
-            src_info = source_map.get(source_id, {"category": "ru_news", "name": source_id})
-            sname = src_info["name"]
-
-            if sname not in source_stats_map:
-                source_stats_map[sname] = {
-                    "name": sname,
-                    "analyzed": 0,
-                    "in_top_50": 0,
-                    "in_top_10": 0,
-                }
-            source_stats_map[sname]["analyzed"] += 1
-
-            if headline.lower() in seen_headlines:
-                continue
-
-            seen_headlines.add(headline.lower())
-
-            item_dict = {
-                "headline": headline,
-                "summary": summary,
-                "source_name": sname,
-                "url": url,
+        """Legacy helper compatibility."""
+        top_10, flat_top_50, stats = self.get_top_curated_digest(
+            items_per_category=items_per_category,
+            top_k=top_50_limit,
+        )
+        stats_map = {s["name"]: s for s in stats}
+        cats = [
+            {
+                "code": "ru_news",
+                "title": "Главные события дня",
+                "weight": "100%",
+                "icon": "📰",
+                "items": flat_top_50[:10],
             }
-
-            if len(flat_top_50) < top_50_limit:
-                flat_top_50.append(item_dict)
-                source_stats_map[sname]["in_top_50"] += 1
-
-            cat_code = src_info["category"]
-            if cat_code not in categorized_buckets:
-                cat_code = "ru_news"
-
-            if len(categorized_buckets[cat_code]) < items_per_category:
-                categorized_buckets[cat_code].append(item_dict)
-
-        result: list[dict[str, Any]] = []
-        for cat in CATEGORIES_INFO:
-            code = cat["code"]
-            items = categorized_buckets[code]
-            fallbacks = CATEGORY_FALLBACKS.get(code, [])
-
-            while len(items) < items_per_category and fallbacks:
-                fb = fallbacks[len(items) % len(fallbacks)]
-                if fb["headline"].lower() not in seen_headlines:
-                    seen_headlines.add(fb["headline"].lower())
-                    items.append(fb)
-                else:
-                    break
-
-            result.append({
-                "code": code,
-                "title": cat["title"],
-                "weight": cat["weight"],
-                "icon": cat["icon"],
-                "items": items[:items_per_category],
-            })
-
-        return result, source_stats_map, flat_top_50
-
-    def get_categorized_news(self, items_per_category: int = 10) -> list[dict[str, Any]]:
-        """Legacy helper for backward compatibility."""
-        result, _, _ = self.get_categorized_news_and_stats(items_per_category=items_per_category)
-        return result
+        ]
+        return cats, stats_map, flat_top_50
 
     def get_top_news_details(self, limit: int = 5) -> list[dict[str, str]]:
-        """Flat list of top news details."""
-        with contextlib.suppress(Exception):
-            articles = self.news_repo.get_latest_news(limit=limit * 2)
-            if articles:
-                results: list[dict[str, str]] = []
-                for art in articles:
-                    headline = art.get("headline", "").strip()
-                    if headline:
-                        results.append({
-                            "phrase": headline,
-                            "headline": headline,
-                            "url": art.get("url", "#"),
-                            "source_id": art.get("source_id", "news"),
-                        })
-                if results:
-                    while len(results) < limit:
-                        results.append(results[len(results) % len(articles)])
-                    return results[:limit]
-
-        cats = self.get_categorized_news(items_per_category=1)
-        flat: list[dict[str, str]] = []
-        for cat in cats:
-            for item in cat["items"]:
-                flat.append({
-                    "phrase": item["headline"],
-                    "headline": item["headline"],
-                    "url": item["url"],
-                    "source_id": item["source_name"],
-                })
-        return flat[:limit]
+        top_10, _, _ = self.get_top_curated_digest(top_k=limit)
+        return [
+            {
+                "phrase": item["headline"],
+                "headline": item["headline"],
+                "url": item["url"],
+                "source_id": item["source_name"],
+            }
+            for item in top_10[:limit]
+        ]
 
     def get_top_news_phrases(self, limit: int = 5) -> list[str]:
-        """Flat headline list."""
         details = self.get_top_news_details(limit=limit)
         return [item["headline"] for item in details]
 
     def get_top_reader_words(self, limit: int = 5) -> list[str]:
-        """Aggregate top N most submitted words from readers."""
+        words_entries = self.words_repo.get_recent_words(limit=100)
+        from collections import Counter
         counter: Counter[str] = Counter()
-
-        with contextlib.suppress(Exception):
-            words_entries = self.words_repo.get_recent_words(limit=100)
-            for entry in words_entries:
-                w = entry.get("word")
-                if w:
-                    counter[w.lower()] += 1
-
+        for entry in words_entries:
+            w = entry.get("word")
+            if w:
+                counter[w.lower()] += 1
         top_pairs = counter.most_common(limit)
         result = [pair[0] for pair in top_pairs]
-
         fallbacks = ["сатира", "технологии", "юмор", "будущее", "пульс"]
         while len(result) < limit:
             result.append(fallbacks[len(result) % len(fallbacks)])
-
         return result[:limit]
