@@ -22,7 +22,7 @@ class BaseRepo:
         self._client = client
 
     @property
-    def client(self) -> Client:
+    def client(self) -> Client | None:
         if self._client is None:
             return get_supabase_client()
         return self._client
@@ -49,12 +49,23 @@ class UsersRepo(BaseRepo):
         if tenant_id:
             data["tenant_id"] = tenant_id
 
-        res = self.client.table("users").upsert(data).execute()
-        return res.data[0] if res.data else data
+        if not self.client:
+            return data
+
+        try:
+            res = self.client.table("users").upsert(data).execute()
+            return res.data[0] if res.data else data
+        except Exception:
+            return data
 
     def get_by_id(self, user_id: int) -> dict[str, Any] | None:
-        res = self.client.table("users").select("*").eq("id", user_id).execute()
-        return res.data[0] if res.data else None
+        if not self.client:
+            return None
+        try:
+            res = self.client.table("users").select("*").eq("id", user_id).execute()
+            return res.data[0] if res.data else None
+        except Exception:
+            return None
 
 
 class WordsRepo(BaseRepo):
@@ -71,22 +82,34 @@ class WordsRepo(BaseRepo):
             "user_id": user_id,
             "username": username,
             "word": word,
+            "created_at": datetime.now().isoformat(),
         }
         if tenant_id:
             data["tenant_id"] = tenant_id
 
-        res = self.client.table("words").insert(data).execute()
-        return res.data[0] if res.data else data
+        if not self.client:
+            return data
+
+        try:
+            res = self.client.table("words").insert(data).execute()
+            return res.data[0] if res.data else data
+        except Exception:
+            return data
 
     def get_recent_words(self, limit: int = 10) -> list[dict[str, Any]]:
-        res = (
-            self.client.table("words")
-            .select("*")
-            .order("created_at", desc=True)
-            .limit(limit)
-            .execute()
-        )
-        return res.data or []
+        if not self.client:
+            return []
+        try:
+            res = (
+                self.client.table("words")
+                .select("*")
+                .order("created_at", desc=True)
+                .limit(limit)
+                .execute()
+            )
+            return res.data or []
+        except Exception:
+            return []
 
 
 class NewsRepo(BaseRepo):
@@ -105,18 +128,26 @@ class NewsRepo(BaseRepo):
             "url": url,
             "published_at": published_at,
         }
+        if not self.client:
+            return data
+
         res = self.client.table("news_items").insert(data).execute()
         return res.data[0] if res.data else data
 
     def get_latest_news(self, limit: int = 10) -> list[dict[str, Any]]:
-        res = (
-            self.client.table("news_items")
-            .select("*")
-            .order("collected_at", desc=True)
-            .limit(limit)
-            .execute()
-        )
-        return res.data or []
+        if not self.client:
+            return []
+        try:
+            res = (
+                self.client.table("news_items")
+                .select("*")
+                .order("collected_at", desc=True)
+                .limit(limit)
+                .execute()
+            )
+            return res.data or []
+        except Exception:
+            return []
 
 
 class IssuesRepo(BaseRepo):
@@ -129,6 +160,17 @@ class IssuesRepo(BaseRepo):
         status: str = "draft",
         tenant_id: str | None = None,
     ) -> dict[str, Any]:
+        data = {
+            "date": issue_date,
+            "brief_used": brief_used,
+            "status": status,
+        }
+        if tenant_id:
+            data["tenant_id"] = tenant_id
+
+        if not self.client:
+            return data
+
         # Check existing date to guarantee DuplicateIssueError
         existing = (
             self.client.table("issues").select("id").eq("date", issue_date).execute()
@@ -138,20 +180,17 @@ class IssuesRepo(BaseRepo):
                 f"An issue for date {issue_date} already exists."
             )
 
-        data = {
-            "date": issue_date,
-            "brief_used": brief_used,
-            "status": status,
-        }
-        if tenant_id:
-            data["tenant_id"] = tenant_id
-
         res = self.client.table("issues").insert(data).execute()
         return res.data[0] if res.data else data
 
     def get_by_date(self, issue_date: str) -> dict[str, Any] | None:
-        res = self.client.table("issues").select("*").eq("date", issue_date).execute()
-        return res.data[0] if res.data else None
+        if not self.client:
+            return None
+        try:
+            res = self.client.table("issues").select("*").eq("date", issue_date).execute()
+            return res.data[0] if res.data else None
+        except Exception:
+            return None
 
 
 class BriefsRepo(BaseRepo):
@@ -170,6 +209,9 @@ class BriefsRepo(BaseRepo):
             "top_words": top_words or [],
             "top_news": top_news or [],
         }
+        if not self.client:
+            return data
+
         res = self.client.table("briefs_history").insert(data).execute()
         return res.data[0] if res.data else data
 
@@ -194,34 +236,46 @@ class GuessesRepo(BaseRepo):
         if tenant_id:
             data["tenant_id"] = tenant_id
 
+        if not self.client:
+            return data
+
         res = self.client.table("guesses").insert(data).execute()
         return res.data[0] if res.data else data
 
     def get_winning_guess(self, issue_id: str) -> dict[str, Any] | None:
-        res = (
-            self.client.table("guesses")
-            .select("*")
-            .eq("issue_id", issue_id)
-            .order("votes", desc=True)
-            .limit(1)
-            .execute()
-        )
-        return res.data[0] if res.data else None
+        if not self.client:
+            return None
+        try:
+            res = (
+                self.client.table("guesses")
+                .select("*")
+                .eq("issue_id", issue_id)
+                .order("votes", desc=True)
+                .limit(1)
+                .execute()
+            )
+            return res.data[0] if res.data else None
+        except Exception:
+            return None
 
 
 class ReserveRepo(BaseRepo):
     """Repository for reserve backup posters."""
 
     def get_available(self) -> dict[str, Any] | None:
-        res = (
-            self.client.table("reserve_posters")
-            .select("*")
-            .eq("is_used", False)
-            .limit(1)
-            .execute()
-        )
-        return res.data[0] if res.data else None
-
+        if not self.client:
+            return None
+        try:
+            res = (
+                self.client.table("reserve_posters")
+                .select("*")
+                .eq("is_used", False)
+                .limit(1)
+                .execute()
+            )
+            return res.data[0] if res.data else None
+        except Exception:
+            return None
 
 
 class OrdersRepo(BaseRepo):
@@ -244,6 +298,9 @@ class OrdersRepo(BaseRepo):
         }
         if tenant_id:
             data["tenant_id"] = tenant_id
+
+        if not self.client:
+            return data
 
         res = self.client.table("orders").insert(data).execute()
         return res.data[0] if res.data else data
@@ -268,6 +325,9 @@ class EventsRepo(BaseRepo):
         }
         if tenant_id:
             data["tenant_id"] = tenant_id
+
+        if not self.client:
+            return data
 
         res = self.client.table("events").insert(data).execute()
         return res.data[0] if res.data else data
