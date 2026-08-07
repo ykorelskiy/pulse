@@ -42,20 +42,23 @@ class TopicRanker:
         Returns:
             list[str]: Exactly `limit` key news phrases.
         """
-        articles = self.news_repo.get_latest_news(limit=20)
         phrases: list[str] = []
         seen = set()
 
-        for art in articles:
-            headline = art.get("headline", "")
-            if not headline:
-                continue
-            phrase = extract_key_phrase(headline)
-            if phrase and phrase.lower() not in seen:
-                seen.add(phrase.lower())
-                phrases.append(phrase)
-            if len(phrases) >= limit:
-                break
+        try:
+            articles = self.news_repo.get_latest_news(limit=20)
+            for art in articles:
+                headline = art.get("headline", "")
+                if not headline:
+                    continue
+                phrase = extract_key_phrase(headline)
+                if phrase and phrase.lower() not in seen:
+                    seen.add(phrase.lower())
+                    phrases.append(phrase)
+                if len(phrases) >= limit:
+                    break
+        except Exception:
+            pass
 
         # Fallback placeholders if fewer than limit articles exist
         fallbacks = [
@@ -77,13 +80,16 @@ class TopicRanker:
         Returns:
             list[str]: Top reader words sorted by frequency.
         """
-        words_entries = self.words_repo.get_recent_words(limit=100)
         counter: Counter[str] = Counter()
 
-        for entry in words_entries:
-            w = entry.get("word")
-            if w:
-                counter[w.lower()] += 1
+        try:
+            words_entries = self.words_repo.get_recent_words(limit=100)
+            for entry in words_entries:
+                w = entry.get("word")
+                if w:
+                    counter[w.lower()] += 1
+        except Exception:
+            pass
 
         top_pairs = counter.most_common(limit)
         result = [pair[0] for pair in top_pairs]
@@ -94,3 +100,4 @@ class TopicRanker:
             result.append(fallbacks[len(result) % len(fallbacks)])
 
         return result[:limit]
+
