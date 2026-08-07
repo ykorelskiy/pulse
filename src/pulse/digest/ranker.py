@@ -196,9 +196,10 @@ class TopicRanker:
         seen_headlines: set[str] = set()
 
         for art in collected_articles:
-            headline = art.get("headline", "").strip()
+            headline = art.get("headline", "").strip() if art.get("headline") else ""
             url = art.get("url", "#")
-            summary = art.get("summary", "").strip()
+            summary = (art.get("summary") or "").strip()
+
             source_id = art.get("source_id", "")
             if not headline or headline.lower() in seen_headlines:
                 continue
