@@ -2,7 +2,7 @@ sources:
   # Категория А: RU — главные ленты и ТОП-агрегаторы (20%)
   - id: yandex_news
     name: "Яндекс Новости — Главное дня"
-    url: "https://news.yandex.ru/index.rss"
+    url: "https://dzen.ru/news/rss"
     category: "ru_news"
     weight: 0.20
     enabled: true
@@ -109,7 +109,7 @@ sources:
 
   - id: starhit_showbiz
     name: "StarHit — Светская хроника"
-    url: "https://www.starhit.ru/rss.xml"
+    url: "https://www.starhit.ru/feed/rss/"
     category: "ru_hot"
     weight: 0.30
     enabled: true
@@ -123,7 +123,7 @@ sources:
 
   - id: kp_all
     name: "Комсомольская правда — Происшествия и скандалы"
-    url: "https://www.kp.ru/rss/all.xml"
+    url: "https://www.kp.ru/rss/news.xml"
     category: "ru_hot"
     weight: 0.30
     enabled: true
@@ -131,21 +131,21 @@ sources:
   # Категория Ж: Спорт (10%)
   - id: sports_ru
     name: "Sports.ru — Главные новости спорта"
-    url: "https://www.sports.ru/rss/all.xml"
+    url: "https://www.sports.ru/rss/news.xml"
     category: "sports"
     weight: 0.10
     enabled: true
 
   - id: championat_com
     name: "Чемпионат — Главное в спорте"
-    url: "https://www.championat.com/xml/rss.xml"
+    url: "https://www.championat.com/rss/news/"
     category: "sports"
     weight: 0.10
     enabled: true
 
   - id: match_tv
     name: "Матч ТВ — Новости спорта"
-    url: "https://matchtv.ru/rss"
+    url: "https://matchtv.ru/rss/news"
     category: "sports"
     weight: 0.10
     enabled: true

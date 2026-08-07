@@ -1,11 +1,13 @@
-"""RSS feed source adapter using feedparser."""
+"""RSS feed source adapter using httpx and feedparser."""
 
+import contextlib
 import re
 import time
 from datetime import datetime, timezone
 from typing import Any
 
 import feedparser
+import httpx
 
 from pulse.sources.base import BaseSourceAdapter, NewsArticle
 
@@ -23,9 +25,8 @@ def strip_html(text: Any) -> str:
     return " ".join(clean.split()).strip()
 
 
-
 class RSSSourceAdapter(BaseSourceAdapter):
-    """Adapter for RSS/XML news feeds using feedparser."""
+    """Adapter for RSS/XML news feeds using httpx and feedparser."""
 
     def __init__(
         self,
@@ -41,39 +42,48 @@ class RSSSourceAdapter(BaseSourceAdapter):
         self.category = category
 
     async def fetch_latest(self) -> list[NewsArticle]:
-        """Fetch latest entries from RSS feed.
+        """Fetch latest entries from RSS feed using httpx and feedparser.
 
         Returns:
             list[NewsArticle]: Parsed news articles.
         """
-        parsed = feedparser.parse(self.feed_url, agent=DEFAULT_USER_AGENT)
         articles: list[NewsArticle] = []
+        try:
+            async with httpx.AsyncClient(
+                timeout=10.0, follow_redirects=True, verify=False
+            ) as client:
+                headers = {"User-Agent": DEFAULT_USER_AGENT}
+                resp = await client.get(self.feed_url, headers=headers)
+                if resp.status_code != 200:
+                    return []
+                raw_xml = resp.text
 
-        for entry in parsed.entries:
-            headline = getattr(entry, "title", "").strip()
-            link = getattr(entry, "link", "").strip()
-            if not headline or not link:
-                continue
+            parsed = feedparser.parse(raw_xml)
+            for entry in parsed.entries:
+                headline = getattr(entry, "title", "").strip()
+                link = getattr(entry, "link", "").strip()
+                if not headline or not link:
+                    continue
 
-            summary_raw = getattr(entry, "summary", "") or getattr(entry, "description", "")
-            summary_clean = strip_html(summary_raw)[:300]
+                summary_raw = getattr(entry, "summary", "") or getattr(entry, "description", "")
+                summary_clean = strip_html(summary_raw)[:300]
 
-            published_at = None
-            if hasattr(entry, "published_parsed") and entry.published_parsed:
-                dt = datetime.fromtimestamp(time.mktime(entry.published_parsed), tz=timezone.utc)
-                published_at = dt
-            elif hasattr(entry, "updated_parsed") and entry.updated_parsed:
-                dt = datetime.fromtimestamp(time.mktime(entry.updated_parsed), tz=timezone.utc)
-                published_at = dt
+                pub_date = datetime.now(timezone.utc)
+                if hasattr(entry, "published_parsed") and entry.published_parsed:
+                    with contextlib.suppress(Exception):
+                        ts = time.mktime(entry.published_parsed)
+                        pub_date = datetime.fromtimestamp(ts, tz=timezone.utc)
 
-            articles.append(
-                NewsArticle(
-                    source_id=self.source_id,
-                    headline=headline,
-                    url=link,
-                    summary=summary_clean,
-                    published_at=published_at,
+                articles.append(
+                    NewsArticle(
+                        source_id=self.source_id,
+                        headline=headline,
+                        summary=summary_clean,
+                        url=link,
+                        published_at=pub_date,
+                    )
                 )
-            )
+        except Exception:
+            pass
 
         return articles
