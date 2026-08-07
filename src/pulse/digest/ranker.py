@@ -77,6 +77,14 @@ class TopicRanker:
         scored_items: list[tuple[float, dict[str, Any]]] = []
         seen_headlines: set[str] = set()
 
+        HARD_BAN_KEYWORDS = [
+            "погиб", "пострад", "убит", "гибель", "детей", "ранен", "жертв",
+            "бпла", "беспилотник", "атак", "обстрел", "взрыв", "прилет", "сводк",
+            "всу", "днр", "лнр", "фронт", "бой", "убийств", "крушени", "авари",
+            "рухнул", "катастроф", "штурм", "пожар", "задержан", "арест", "уголовн",
+            "суд", "сенат", "санкци", "войн", "боевик", "минобороны"
+        ]
+
         for item in raw_items:
             sid = str(item.get("source_id") or "news")
             sname = source_map.get(sid, sid)
@@ -90,12 +98,14 @@ class TopicRanker:
                 }
             source_stats_map[sname]["analyzed"] += 1
 
-            # Skip victims
-            if item.get("has_victims") or item.get("status") == "rejected_victims":
-                continue
-
             headline = (item.get("ru_headline") or item.get("headline") or "").strip()
             if not headline or headline.lower() in seen_headlines:
+                continue
+
+            # Hard ban filter check for military, disasters, arrests and casualties
+            if item.get("has_victims") or item.get("status") == "rejected_victims":
+                continue
+            if any(k in headline.lower() for k in HARD_BAN_KEYWORDS):
                 continue
 
             seen_headlines.add(headline.lower())
@@ -147,8 +157,18 @@ class TopicRanker:
                 cluster_seen.add(cid)
                 deduped_items.append(item)
 
-        # Top 10 selection
-        top_10_raw = deduped_items[:top_k]
+        # Top 10 selection with diversity cap (max 2 items per source)
+        top_10_raw: list[dict[str, Any]] = []
+        source_counts_top_10: dict[str, int] = {}
+
+        for item in deduped_items:
+            sname = item["source_name"]
+            if source_counts_top_10.get(sname, 0) < 2:
+                top_10_raw.append(item)
+                source_counts_top_10[sname] = source_counts_top_10.get(sname, 0) + 1
+            if len(top_10_raw) >= top_k:
+                break
+
         top_10: list[dict[str, str]] = []
         for item in top_10_raw:
             top_10.append({
@@ -161,8 +181,17 @@ class TopicRanker:
             if sname in source_stats_map:
                 source_stats_map[sname]["in_top_10"] += 1
 
-        # Top 50 flat candidate list (100% translated)
-        flat_top_50 = deduped_items[:50]
+        # Top 50 flat list with diversity cap (max 4 items per source)
+        flat_top_50: list[dict[str, Any]] = []
+        source_counts_top_50: dict[str, int] = {}
+
+        for item in deduped_items:
+            sname = item["source_name"]
+            if source_counts_top_50.get(sname, 0) < 4:
+                flat_top_50.append(item)
+                source_counts_top_50[sname] = source_counts_top_50.get(sname, 0) + 1
+            if len(flat_top_50) >= 50:
+                break
         for item in flat_top_50:
             sname = item["source_name"]
             if sname in source_stats_map:
