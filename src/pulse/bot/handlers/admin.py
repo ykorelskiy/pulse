@@ -23,11 +23,12 @@ def is_admin(user: types.User | None) -> bool:
     return bool(user.username and user.username.lower() == "anta9onist")
 
 
-
 async def send_split_message(message: types.Message, text: str) -> None:
-    """Send text split cleanly across messages if exceeding Telegram limit."""
+    """Send text split cleanly across messages without link previews."""
+    no_preview = types.LinkPreviewOptions(is_disabled=True)
+
     if len(text) <= 4000:
-        await message.answer(text, parse_mode="Markdown")
+        await message.answer(text, parse_mode="Markdown", link_preview_options=no_preview)
         return
 
     parts = text.split("\n\n")
@@ -37,11 +38,16 @@ async def send_split_message(message: types.Message, text: str) -> None:
             current_chunk = f"{current_chunk}\n\n{part}".strip()
         else:
             if current_chunk:
-                await message.answer(current_chunk, parse_mode="Markdown")
+                await message.answer(
+                    current_chunk,
+                    parse_mode="Markdown",
+                    link_preview_options=no_preview,
+                )
             current_chunk = part
 
+
     if current_chunk:
-        await message.answer(current_chunk, parse_mode="Markdown")
+        await message.answer(current_chunk, parse_mode="Markdown", link_preview_options=no_preview)
 
 
 @router.message(Command("show_words", "words"))
@@ -98,17 +104,18 @@ async def cmd_force_brief(message: types.Message) -> None:
     if not is_admin(message.from_user):
         return
 
-    await message.answer("🔄 Генерирую свежий бриф дня...")
+    await message.answer("🔄 Генерирую свежий бриф дня с ИИ-отбором...")
 
     ranker = TopicRanker()
-    categorized_news = ranker.get_categorized_news(items_per_category=3)
+    top_10, all_30 = ranker.get_top_curated_digest(items_per_category=5, top_k=10)
     words = ranker.get_top_reader_words(limit=5)
     builder = BriefBuilder()
 
     today_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     brief_text = builder.build_daily_brief(
         date_str=today_str,
-        categorized_news=categorized_news,
+        top_10_curated=top_10,
+        all_30_categorized=all_30,
         top_words=words,
     )
 

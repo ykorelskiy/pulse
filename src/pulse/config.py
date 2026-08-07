@@ -111,6 +111,13 @@ class Settings(BaseSettings):
 
     TIMEZONE: str = Field(default="Europe/Moscow")
 
+    # Gemini LLM API
+    GEMINI_API_KEY: str | None = Field(
+        default=None,
+        description="Google Gemini API key for translation and news curation",
+    )
+
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

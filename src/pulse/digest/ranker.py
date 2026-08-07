@@ -1,10 +1,11 @@
-"""News and words ranker grouped by 6 sources categories."""
+"""News and words ranker grouped by 6 sources categories with Gemini LLM Curation."""
 
 import contextlib
 from collections import Counter
 from typing import Any
 
 from pulse.db.repo import NewsRepo, WordsRepo
+from pulse.digest.llm import LLMCurator
 from pulse.sources.registry import SourceRegistry
 
 CATEGORIES_INFO = [
@@ -224,32 +225,41 @@ class TopicRanker:
         self,
         news_repo: NewsRepo | None = None,
         words_repo: WordsRepo | None = None,
+        curator: LLMCurator | None = None,
     ) -> None:
         self.news_repo = news_repo or NewsRepo()
         self.words_repo = words_repo or WordsRepo()
+        self.curator = curator or LLMCurator()
 
-    def get_categorized_news(self, items_per_category: int = 5) -> list[dict[str, Any]]:
-        """Extract up to N news items for each of the 6 news categories.
+    def get_top_curated_digest(
+        self,
+        items_per_category: int = 5,
+        top_k: int = 10,
+    ) -> tuple[list[dict[str, str]], list[dict[str, Any]]]:
+        """Fetch 5 candidates for each of 6 categories (30 items total), then curate via LLM.
 
         Returns:
-            list[dict[str, Any]]: List of categories with metadata and headline items.
+            tuple[list[dict[str, str]], list[dict[str, Any]]]:
+                - Top 10 neural-selected news headlines with translation
+                - All 30 categorized news headlines grouped into 6 category buckets
         """
+        categorized_raw = self.get_categorized_news(items_per_category=items_per_category)
+        return self.curator.curate_and_translate_news(categorized_raw, top_k=top_k)
+
+    def get_categorized_news(self, items_per_category: int = 5) -> list[dict[str, Any]]:
+        """Extract up to N news items for each of the 6 news categories."""
         source_map: dict[str, dict[str, str]] = {}
-        try:
+        with contextlib.suppress(Exception):
             registry = SourceRegistry.load_from_config()
             for adapter in registry.get_all():
                 source_map[adapter.source_id] = {
                     "category": getattr(adapter, "category", "ru_news"),
                     "name": getattr(adapter, "name", adapter.source_id),
                 }
-        except Exception:
-            pass
 
-        # Fetch recent news pool
         collected_articles: list[dict[str, Any]] = []
         with contextlib.suppress(Exception):
             collected_articles = self.news_repo.get_latest_news(limit=500)
-
 
         categorized_buckets: dict[str, list[dict[str, str]]] = {
             cat["code"]: [] for cat in CATEGORIES_INFO
@@ -276,7 +286,6 @@ class TopicRanker:
                     "url": url,
                 })
 
-        # Top up any category with fallbacks if RSS collection yielded < items_per_category
         result: list[dict[str, Any]] = []
         for cat in CATEGORIES_INFO:
             code = cat["code"]
@@ -333,8 +342,6 @@ class TopicRanker:
                 })
         return flat[:limit]
 
-
-
     def get_top_news_phrases(self, limit: int = 5) -> list[str]:
         """Flat headline list."""
         details = self.get_top_news_details(limit=limit)
@@ -344,14 +351,12 @@ class TopicRanker:
         """Aggregate top N most submitted words from readers."""
         counter: Counter[str] = Counter()
 
-        try:
+        with contextlib.suppress(Exception):
             words_entries = self.words_repo.get_recent_words(limit=100)
             for entry in words_entries:
                 w = entry.get("word")
                 if w:
                     counter[w.lower()] += 1
-        except Exception:
-            pass
 
         top_pairs = counter.most_common(limit)
         result = [pair[0] for pair in top_pairs]

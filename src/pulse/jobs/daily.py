@@ -3,7 +3,7 @@
 import asyncio
 from datetime import datetime, timezone
 
-from aiogram import Bot
+from aiogram import Bot, types
 
 from pulse.briefsmith.builder import BriefBuilder
 from pulse.briefsmith.policy import EditorialPolicyEnforcer
@@ -27,7 +27,7 @@ async def run_daily_job() -> str:
     logger.info("starting_daily_brief_job", date=today_str)
 
     ranker = TopicRanker()
-    categorized_news = ranker.get_categorized_news(items_per_category=5)
+    top_10, all_30 = ranker.get_top_curated_digest(items_per_category=5, top_k=10)
     raw_words = ranker.get_top_reader_words(limit=5)
 
     policy = EditorialPolicyEnforcer()
@@ -36,7 +36,8 @@ async def run_daily_job() -> str:
     builder = BriefBuilder()
     brief_text = builder.build_daily_brief(
         date_str=today_str,
-        categorized_news=categorized_news,
+        top_10_curated=top_10,
+        all_30_categorized=all_30,
         top_words=words,
         previous_winner_text=None,
     )
@@ -59,12 +60,11 @@ async def run_daily_job() -> str:
             issue_id=issue["id"],
             brief_text=brief_text,
             top_words=words,
-            top_news=categorized_news,
+            top_news=all_30,
         )
 
-
-
-    # Send brief to admin chat
+    # Send brief to admin chat without web link previews
+    no_preview = types.LinkPreviewOptions(is_disabled=True)
     bot = Bot(token=cfg.TELEGRAM_BOT_TOKEN)
     try:
         logger.info("sending_brief_to_admin", admin_chat_id=cfg.ADMIN_CHAT_ID)
@@ -73,6 +73,7 @@ async def run_daily_job() -> str:
                 chat_id=cfg.ADMIN_CHAT_ID,
                 text=brief_text,
                 parse_mode="Markdown",
+                link_preview_options=no_preview,
             )
         else:
             parts = brief_text.split("\n\n")
@@ -86,6 +87,7 @@ async def run_daily_job() -> str:
                             chat_id=cfg.ADMIN_CHAT_ID,
                             text=current_chunk,
                             parse_mode="Markdown",
+                            link_preview_options=no_preview,
                         )
                     current_chunk = part
             if current_chunk:
@@ -93,12 +95,12 @@ async def run_daily_job() -> str:
                     chat_id=cfg.ADMIN_CHAT_ID,
                     text=current_chunk,
                     parse_mode="Markdown",
+                    link_preview_options=no_preview,
                 )
     except Exception as e:
         logger.error("failed_sending_brief_to_admin", error=str(e))
     finally:
         await bot.session.close()
-
 
     logger.info("daily_brief_job_completed", date=today_str)
     return brief_text
