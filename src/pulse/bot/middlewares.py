@@ -1,4 +1,4 @@
-"""Bot rate limiting middleware for enforcing 1 word per 24 hours."""
+"""Bot rate limiting middleware for enforcing 1 word/phrase per 24 hours."""
 
 from datetime import datetime, timedelta, timezone
 from typing import Any, Awaitable, Callable
@@ -7,6 +7,9 @@ from aiogram import BaseMiddleware
 from aiogram.types import TelegramObject
 
 from pulse.db.repo import WordsRepo
+
+# In-memory fallback storage when Supabase database is unreachable
+MEMORY_WORDS_STORE: list[dict[str, Any]] = []
 
 
 class RateLimitMiddleware(BaseMiddleware):
@@ -21,17 +24,24 @@ class RateLimitMiddleware(BaseMiddleware):
         event: TelegramObject,
         data: dict[str, Any],
     ) -> Any:
-        if not hasattr(event, "from_user") or not hasattr(event, "text"):
+        from_user = getattr(event, "from_user", None)
+        raw_text = getattr(event, "text", None)
+        if not from_user or not raw_text:
             return await handler(event, data)
 
+        text = raw_text.strip()
 
-        text = event.text.strip()
         # Allow /start, /help, /myword without rate limiting
         if text.startswith(("/start", "/help", "/myword")):
             return await handler(event, data)
 
-        user_id = event.from_user.id
-        recent = self.words_repo.get_recent_words(limit=100)
+        user_id = from_user.id
+
+        recent: list[dict[str, Any]] = []
+        try:
+            recent = self.words_repo.get_recent_words(limit=100)
+        except Exception:
+            recent = MEMORY_WORDS_STORE
 
         now = datetime.now(timezone.utc)
         for entry in recent:
@@ -39,19 +49,25 @@ class RateLimitMiddleware(BaseMiddleware):
                 created_raw = entry.get("created_at")
                 if created_raw:
                     try:
-                        created_dt = datetime.fromisoformat(created_raw)
+                        created_dt = (
+                            datetime.fromisoformat(created_raw)
+                            if isinstance(created_raw, str)
+                            else created_raw
+                        )
                         if created_dt.tzinfo is None:
                             created_dt = created_dt.replace(tzinfo=timezone.utc)
                         if now - created_dt < timedelta(hours=24):
+                            w_val = entry.get("word")
                             await event.answer(
-                                f"⏳ Вы уже присылали слово дня (**«{entry.get('word')}»**).\n"
-                                "Следующее слово можно будет отправить через 24 часа "
-                                "с момента предыдущего!",
+                                f"⏳ Вы уже присылали фразы дня (**«{w_val}»**).\n"
+                                "Следующую фразу можно будет отправить через 24 часа "
+                                "с момента предыдущей!",
                                 parse_mode="Markdown",
                             )
 
                             return None
-                    except ValueError:
+
+                    except Exception:
                         pass
 
         return await handler(event, data)

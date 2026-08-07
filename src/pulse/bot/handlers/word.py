@@ -1,10 +1,12 @@
 """Word/phrase intake handlers for Telegram bot."""
 
 import re
+from datetime import datetime, timezone
 
 from aiogram import Router, types
 from aiogram.filters import Command
 
+from pulse.bot.middlewares import MEMORY_WORDS_STORE
 from pulse.db.repo import UsersRepo, WordsRepo
 
 router = Router()
@@ -57,9 +59,15 @@ async def cmd_myword(message: types.Message) -> None:
     if not message.from_user:
         return
 
-    words_repo = WordsRepo()
-    recent = words_repo.get_recent_words(limit=50)
-    user_words = [w for w in recent if w.get("user_id") == message.from_user.id]
+    user_words: list[dict] = []
+    try:
+        words_repo = WordsRepo()
+        recent = words_repo.get_recent_words(limit=50)
+        user_words = [w for w in recent if w.get("user_id") == message.from_user.id]
+    except Exception:
+        user_words = [
+            w for w in MEMORY_WORDS_STORE if w.get("user_id") == message.from_user.id
+        ]
 
     if user_words:
         latest = user_words[0]
@@ -91,23 +99,34 @@ async def process_word_submission(message: types.Message) -> None:
             "(например: *сатира*, *нейросеть*, *технологический прорыв*).",
             parse_mode="Markdown",
         )
-
         return
 
-    users_repo = UsersRepo()
-    users_repo.upsert_user(
-        user_id=message.from_user.id,
-        username=message.from_user.username,
-        first_name=message.from_user.first_name,
-        last_name=message.from_user.last_name,
-    )
+    # Save to Supabase DB or in-memory fallback
+    try:
+        users_repo = UsersRepo()
+        users_repo.upsert_user(
+            user_id=message.from_user.id,
+            username=message.from_user.username,
+            first_name=message.from_user.first_name,
+            last_name=message.from_user.last_name,
+        )
+        words_repo = WordsRepo()
+        words_repo.add_word(
+            user_id=message.from_user.id,
+            username=message.from_user.username,
+            word=word,
+        )
+    except Exception:
+        pass
 
-    words_repo = WordsRepo()
-    words_repo.add_word(
-        user_id=message.from_user.id,
-        username=message.from_user.username,
-        word=word,
-    )
+    # Save in memory store
+    entry = {
+        "user_id": message.from_user.id,
+        "username": message.from_user.username,
+        "word": word,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    }
+    MEMORY_WORDS_STORE.insert(0, entry)
 
     await message.answer(
         f"✅ Отлично! Ваше словосочетание **«{word}»** принято для сегодняшнего плаката дня!",

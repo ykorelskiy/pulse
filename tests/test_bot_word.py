@@ -46,7 +46,8 @@ async def test_rate_limit_middleware_blocks_recent_user():
     assert res is None
     handler_mock.assert_not_called()
     event_mock.answer.assert_called_once()
-    assert "уже присылали слово" in event_mock.answer.call_args[0][0]
+    assert "уже присылали" in event_mock.answer.call_args[0][0]
+
 
 
 @pytest.mark.asyncio
