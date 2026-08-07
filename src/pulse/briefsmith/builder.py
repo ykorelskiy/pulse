@@ -1,48 +1,57 @@
-"""Author brief builder module for Assisted Mode."""
+"""Author brief builder module."""
+
+from typing import Any
 
 
 class BriefBuilder:
-    """Constructs the daily concise brief for author @anta9onist."""
+    """Builds formatted Markdown daily brief for author (@anta9onist)."""
 
     def build_daily_brief(
         self,
         date_str: str,
-        top_news: list[str],
+        top_news: list[Any],  # Can be list[str] or list[dict[str, str]]
         top_words: list[str],
         previous_winner_text: str | None = None,
     ) -> str:
-        """Build short author brief containing context, words, and yesterday's winner.
+        """Construct structured daily brief for poster creation.
 
         Args:
-            date_str: Target date string (YYYY-MM-DD).
-            top_news: 5 key news phrases.
-            top_words: 5 reader words.
-            previous_winner_text: Optional text of yesterday's winner guess.
+            date_str: Target issue date string (YYYY-MM-DD).
+            top_news: List of key news phrases or list of dicts with 'phrase', 'headline', 'url'.
+            top_words: Top 5 reader submitted words.
+            previous_winner_text: Yesterday's decoded guess text if available.
 
         Returns:
-            str: Formatted markdown brief for author @anta9onist.
+            str: Markdown formatted brief text.
         """
-        news_block = "\n".join([f"  • {phrase}" for phrase in top_news[:5]])
-        words_block = ", ".join(top_words[:5])
+        lines = [
+            "🎨 **БРИФ ПЛАКАТА ДНЯ ДЛЯ АВТОРА (@anta9onist)**",
+            f"📅 **Дата:** {date_str}\n",
+            "1️⃣ **5 ключевых событий/фраз дня (с привязкой к новостям):**",
+        ]
 
-        winner_block = (
-            f"«{previous_winner_text}»"
-            if previous_winner_text
-            else "Первый выпуск (пасхалка на усмотрение автора)"
+        for item in top_news:
+            if isinstance(item, dict):
+                phrase = item.get("phrase", "")
+                headline = item.get("headline", "")
+                url = item.get("url", "#")
+                lines.append(f"  • **{phrase}** — [{headline}]({url})")
+            else:
+                lines.append(f"  • **{item}**")
+
+        lines.append("\n2️⃣ **5 главных слов от читателей:**")
+        words_str = ", ".join(top_words) if top_words else "пока нет слов"
+        lines.append(f"  • {words_str}\n")
+
+        lines.append("3️⃣ **Отсылка к вчерашней разгадке дня:**")
+        winner = previous_winner_text or "Первый выпуск (пасхалка на усмотрение автора)"
+        lines.append(f"  • «{winner}»\n")
+
+        lines.append("4️⃣ **Инструкция для генерации в ChatGPT:**")
+        lines.append(
+            "Создай плакат-сатиру в эстетике плаката 70–80-х годов. Обязательно "
+            "включи персонажа — жестяного робота ПУЛЬС. Объедини ключевые фразы дня "
+            f"({words_str}) и детали событий."
         )
 
-        brief = (
-            f"🎨 **БРИФ ПЛАКАТА ДНЯ ДЛЯ АВТОРА (@anta9onist)**\n"
-            f"📅 **Дата:** {date_str}\n\n"
-            f"1️⃣ **5 ключевых событий/фраз дня:**\n"
-            f"{news_block}\n\n"
-            f"2️⃣ **5 главных слов от читателей:**\n"
-            f"  • {words_block}\n\n"
-            f"3️⃣ **Отсылка к вчерашней разгадке дня:**\n"
-            f"  • {winner_block}\n\n"
-            f"4️⃣ **Инструкция для генерации в ChatGPT:**\n"
-            f"Создай плакат-сатиру в эстетике плаката 70–80-х годов. "
-            f"Обязательно включи персонажа — жестяного робота ПУЛЬС. "
-            f"Объедини ключевые фразы дня ({words_block}) и детали событий."
-        )
-        return brief
+        return "\n".join(lines)

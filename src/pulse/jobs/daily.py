@@ -27,19 +27,20 @@ async def run_daily_job() -> str:
     logger.info("starting_daily_brief_job", date=today_str)
 
     ranker = TopicRanker()
-    raw_news = ranker.get_top_news_phrases(limit=5)
+    news_details = ranker.get_top_news_details(limit=5)
     raw_words = ranker.get_top_reader_words(limit=5)
 
     policy = EditorialPolicyEnforcer()
-    news, words = policy.sanitize_input(raw_news, raw_words)
+    _, words = policy.sanitize_input([], raw_words)
 
     builder = BriefBuilder()
     brief_text = builder.build_daily_brief(
         date_str=today_str,
-        top_news=news,
+        top_news=news_details,
         top_words=words,
         previous_winner_text=None,
     )
+
 
     issues_repo = IssuesRepo()
     issue = None
@@ -59,8 +60,9 @@ async def run_daily_job() -> str:
             issue_id=issue["id"],
             brief_text=brief_text,
             top_words=words,
-            top_news=news,
+            top_news=[item["phrase"] for item in news_details if isinstance(item, dict)],
         )
+
 
     # Send brief to admin chat
     bot = Bot(token=cfg.TELEGRAM_BOT_TOKEN)

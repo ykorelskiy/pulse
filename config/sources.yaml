@@ -1,18 +1,57 @@
 sources:
+  # 1. Политика и Главные новости дня
   - id: rbc_news
-    name: "РБК Главные новости"
+    name: "РБК — Главные новости"
     url: "https://rssexport.rbc.ru/rbcnews/news/30/full.rss"
-    category: "general"
+    category: "politics"
     enabled: true
 
-  - id: ria_tech
-    name: "РИА Новости Наука и Технологии"
+  - id: lenta_news
+    name: "Лента.ру — Главные новости"
+    url: "https://lenta.ru/rss/news"
+    category: "politics"
+    enabled: true
+
+  - id: kommersant_news
+    name: "Коммерсантъ — Новости"
+    url: "https://www.kommersant.ru/RSS/news.xml"
+    category: "politics"
+    enabled: true
+
+  - id: ria_main
+    name: "РИА Новости — Лента"
     url: "https://ria.ru/export/rss2/archive/index.xml"
+    category: "politics"
+    enabled: true
+
+  # 2. Светская хроника, шоу-бизнес, таблоиды и скандалы дня
+  - id: starhit_showbiz
+    name: "StarHit — Светская хроника и скандалы"
+    url: "https://www.starhit.ru/rss.xml"
+    category: "celebrity"
+    enabled: true
+
+  - id: sevendays_showbiz
+    name: "7Дней.ру — Шоу-бизнес"
+    url: "https://7days.ru/rss"
+    category: "celebrity"
+    enabled: true
+
+  - id: kp_all
+    name: "Комсомольская правда — Новости и скандалы"
+    url: "https://www.kp.ru/rss/all.xml"
+    category: "celebrity"
+    enabled: true
+
+  # 3. Технологии, IT и инновации
+  - id: habr_top
+    name: "Хабр — Лучшие статьи дня"
+    url: "https://habr.com/ru/rss/best/daily/?fl=ru"
     category: "tech"
     enabled: true
 
-  - id: habr_top
-    name: "Хабр — Лучшее за сутки"
-    url: "https://habr.com/ru/rss/best/daily/?fl=ru"
-    category: "it"
+  - id: threednews
+    name: "3DNews — Новости технологий"
+    url: "https://3dnews.ru/news/rss/"
+    category: "tech"
     enabled: true

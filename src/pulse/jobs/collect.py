@@ -27,6 +27,12 @@ async def run_collect_job() -> int:
 
     for adapter in adapters:
         try:
+            repo.add_source(
+                source_id=adapter.source_id,
+                name=adapter.name,
+                url=adapter.url,
+                category=adapter.category,
+            )
             logger.info("fetching_feed", source_id=adapter.source_id)
             articles = await adapter.fetch_latest()
             for article in articles:
@@ -40,10 +46,10 @@ async def run_collect_job() -> int:
                     )
                     new_count += 1
                 except Exception as ex:
-                    # Ignore duplicate URL constraint errors
                     logger.debug("skip_article", url=article.url, reason=str(ex))
         except Exception as e:
             logger.error("feed_fetch_failed", source_id=adapter.source_id, error=str(e))
+
 
     logger.info("news_collection_completed", processed_count=new_count)
     return new_count

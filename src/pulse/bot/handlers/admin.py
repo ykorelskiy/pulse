@@ -86,7 +86,7 @@ async def cmd_force_brief(message: types.Message) -> None:
     await message.answer("🔄 Генерирую свежий бриф дня...")
 
     ranker = TopicRanker()
-    phrases = ranker.get_top_news_phrases(limit=5)
+    news_details = ranker.get_top_news_details(limit=5)
     words = ranker.get_top_reader_words(limit=5)
     builder = BriefBuilder()
 
@@ -94,8 +94,9 @@ async def cmd_force_brief(message: types.Message) -> None:
     today_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     brief_text = builder.build_daily_brief(
         date_str=today_str,
-        top_news=phrases,
+        top_news=news_details,
         top_words=words,
     )
+
 
     await message.answer(brief_text, parse_mode="Markdown")

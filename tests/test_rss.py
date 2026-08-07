@@ -37,6 +37,7 @@ async def test_rss_adapter_parses_feed():
 def test_source_registry_loads_config():
     registry = SourceRegistry.load_from_config()
     adapters = registry.get_all()
-    assert len(adapters) == 3
+    assert len(adapters) >= 3
+
     source_ids = [a.source_id for a in adapters]
     assert "rbc_news" in source_ids

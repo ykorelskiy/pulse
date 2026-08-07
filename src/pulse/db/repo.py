@@ -162,6 +162,27 @@ class WordsRepo(BaseRepo):
 class NewsRepo(BaseRepo):
     """Repository for news articles."""
 
+    def add_source(
+        self,
+        source_id: str,
+        name: str,
+        url: str,
+        category: str = "general",
+    ) -> dict[str, Any]:
+        data = {
+            "id": source_id,
+            "name": name,
+            "url": url,
+            "category": category,
+        }
+        if not self.client:
+            return data
+        try:
+            res = self.client.table("sources").upsert(data).execute()
+            return res.data[0] if res.data else data
+        except Exception:
+            return data
+
     def add_article(
         self,
         source_id: str,
@@ -178,8 +199,12 @@ class NewsRepo(BaseRepo):
         if not self.client:
             return data
 
-        res = self.client.table("news_items").insert(data).execute()
-        return res.data[0] if res.data else data
+        try:
+            res = self.client.table("news_items").upsert(data, on_conflict="url").execute()
+            return res.data[0] if res.data else data
+        except Exception:
+            return data
+
 
     def get_latest_news(self, limit: int = 10) -> list[dict[str, Any]]:
         if not self.client:
