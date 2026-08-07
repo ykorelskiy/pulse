@@ -29,6 +29,9 @@ class SourceRegistry:
                 adapter = RSSSourceAdapter(
                     source_id=item["id"],
                     feed_url=item["url"],
+                    name=item.get("name", item["id"]),
+                    category=item.get("category", "general"),
                 )
                 registry.register(adapter)
+
         return registry

@@ -11,9 +11,19 @@ from pulse.sources.base import BaseSourceAdapter, NewsArticle
 class RSSSourceAdapter(BaseSourceAdapter):
     """Adapter for RSS/XML news feeds using feedparser."""
 
-    def __init__(self, source_id: str, feed_url: str) -> None:
+    def __init__(
+        self,
+        source_id: str,
+        feed_url: str,
+        name: str = "",
+        category: str = "general",
+    ) -> None:
         self.source_id = source_id
         self.feed_url = feed_url
+        self.url = feed_url
+        self.name = name or source_id
+        self.category = category
+
 
     async def fetch_latest(self) -> list[NewsArticle]:
         """Fetch latest entries from RSS feed.
