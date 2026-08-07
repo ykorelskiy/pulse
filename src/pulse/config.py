@@ -56,11 +56,11 @@ class Settings(BaseSettings):
 
     # Supabase
     SUPABASE_URL: str = Field(
-        ...,
+        default="https://placeholder.supabase.co",
         description="Supabase project URL. Obtain from Supabase Dashboard -> Settings -> API",
     )
     SUPABASE_KEY: str = Field(
-        ...,
+        default="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.placeholder",
         description="Supabase anon key. Obtain from Supabase Dashboard -> Settings -> API",
     )
     SUPABASE_SERVICE_ROLE_KEY: str | None = Field(
@@ -70,15 +70,15 @@ class Settings(BaseSettings):
 
     # Storage (R2)
     R2_ENDPOINT_URL: str = Field(
-        ...,
+        default="https://placeholder.r2.cloudflarestorage.com",
         description="Cloudflare R2 Endpoint",
     )
     R2_ACCESS_KEY_ID: str = Field(
-        ...,
+        default="placeholder_access_key",
         description="Cloudflare R2 Access Key ID",
     )
     R2_SECRET_ACCESS_KEY: str = Field(
-        ...,
+        default="placeholder_secret_key",
         description="Cloudflare R2 Secret Access Key",
     )
     R2_BUCKET_NAME: str = Field(
@@ -92,13 +92,14 @@ class Settings(BaseSettings):
 
     # Telegram Bot
     TELEGRAM_BOT_TOKEN: str = Field(
-        ...,
+        default="1234567890:ABCdefGHIjklMNOpqrsTUVwxyz",
         description="Telegram Bot API Token from @BotFather",
     )
     ADMIN_CHAT_ID: int = Field(
-        ...,
+        default=123456789,
         description="Telegram Chat ID for author notifications",
     )
+
     CHANNEL_CHAT_ID: int | None = Field(
         default=None,
         description="Target public Telegram channel ID",

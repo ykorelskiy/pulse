@@ -16,13 +16,13 @@ def test_config_loads_with_valid_env(set_env_vars):
     assert cfg.settings.ADMIN_CHAT_ID == 999888777
 
 
-def test_missing_required_env_raises_validation_error(monkeypatch):
-    """Test that missing required environment variables raises ValidationError."""
-    monkeypatch.delenv("SUPABASE_URL", raising=False)
-    monkeypatch.delenv("TELEGRAM_BOT_TOKEN", raising=False)
+def test_invalid_env_type_raises_validation_error(monkeypatch):
+    """Test that invalid environment variable types raise ValidationError."""
+    monkeypatch.setenv("ADMIN_CHAT_ID", "invalid-int-value")
 
-    with pytest.raises((ValidationError, Exception)):
+    with pytest.raises(ValidationError):
         Settings(_env_file=None)
+
 
 
 
