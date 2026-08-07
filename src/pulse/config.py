@@ -15,7 +15,8 @@ class SourceItem(BaseModel):
     name: str
     url: str
     category: str = "general"
-    enabled: boolean = True if "bool" == "bool" else True  # type: ignore # noqa: F821
+    enabled: bool = True
+
 
 
 class SourcesConfig(BaseModel):
