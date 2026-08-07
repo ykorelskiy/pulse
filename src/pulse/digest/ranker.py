@@ -1,154 +1,26 @@
-"""News and words ranker grouped by sources categories with Gemini LLM Curation."""
+"""Topic ranker for categorizing, scoring, and source statistics."""
 
 import contextlib
 from collections import Counter
 from typing import Any
 
+from pulse.config import CATEGORIES_INFO, CATEGORY_FALLBACKS
 from pulse.db.repo import NewsRepo, WordsRepo
 from pulse.digest.llm import LLMCurator
 from pulse.sources.registry import SourceRegistry
 
 
 def extract_key_phrase(headline: str) -> str:
-    """Extract key phrase from headline."""
+    """Extract first 5 words or clean key phrase from headline."""
     if not headline:
         return ""
     words = headline.strip().split()
-    return " ".join(words[:6])
-
-
-CATEGORIES_INFO = [
-
-    {
-        "code": "ru_hot",
-        "title": "Б. RU скандалы / таблоид / эксклюзивы",
-        "weight": "30%",
-        "icon": "🔥",
-    },
-    {
-        "code": "ru_news",
-        "title": "А. RU общий новостной фон (ТОП-агрегаторы)",
-        "weight": "20%",
-        "icon": "📰",
-    },
-    {
-        "code": "viral_trends",
-        "title": "Д. Сигнал вирусности (Google Trends & Reddit)",
-        "weight": "20%",
-        "icon": "⚡",
-    },
-    {
-        "code": "world_tabloid",
-        "title": "В. Международные скандалы / таблоид",
-        "weight": "15%",
-        "icon": "🌐",
-    },
-    {
-        "code": "world_politics",
-        "title": "Г. Мировая политика",
-        "weight": "10%",
-        "icon": "🏛",
-    },
-    {
-        "code": "sports",
-        "title": "Ж. Новости спорта",
-        "weight": "10%",
-        "icon": "⚽",
-    },
-    {
-        "code": "tech",
-        "title": "Е. Технологии / наука",
-        "weight": "5%",
-        "icon": "💻",
-    },
-]
-
-CATEGORY_FALLBACKS: dict[str, list[dict[str, str]]] = {
-    "ru_hot": [
-        {
-            "headline": "Звёзды эстрады оказались в центре громкого обсуждения",
-            "source_name": "StarHit",
-            "url": "https://www.starhit.ru",
-            "summary": "На съёмках телешоу произошёл громкий инцидент с участием звёзд.",
-        },
-        {
-            "headline": "В центре Петербурга открыли новое резонансное расследование",
-            "source_name": "Фонтанка.ру",
-            "url": "https://www.fontanka.ru",
-            "summary": "Журналисты раскрыли подробности скандального дела.",
-        },
-        {
-            "headline": "Mash: опубликованы эксклюзивные подробности происшествия",
-            "source_name": "Mash",
-            "url": "https://mash.ru",
-            "summary": "Появились новые данные о резонансном событии дня.",
-        },
-    ],
-    "ru_news": [
-        {
-            "headline": "Яндекс Новости: главные мировые темы дня в едином обзоре",
-            "source_name": "Яндекс Новости",
-            "url": "https://news.yandex.ru",
-            "summary": "Редакция собрала ключевые события дня.",
-        },
-        {
-            "headline": "Рамблер: топ-события и ключевые заявления",
-            "source_name": "Рамблер Новости",
-            "url": "https://news.rambler.ru",
-            "summary": "Обзор наиболее обсуждаемых тем дня.",
-        },
-    ],
-    "sports": [
-        {
-            "headline": "Sports.ru: результат ключевого матча тура вывел команду в лидеры",
-            "source_name": "Sports.ru",
-            "url": "https://www.sports.ru",
-            "summary": "Напряжённая игра завершилась яркой победой на последних минутах.",
-        },
-        {
-            "headline": "Чемпионат: оглашены составы на предстоящий турнир",
-            "source_name": "Чемпионат",
-            "url": "https://www.championat.com",
-            "summary": "Тренерский штаб назвал главных кандидатов на победу.",
-        },
-    ],
-    "viral_trends": [
-        {
-            "headline": "Политик случайно подключился к совещанию из ванной комнаты",
-            "source_name": "Reddit r/nottheonion",
-            "url": "https://www.reddit.com/r/nottheonion/",
-            "summary": "Во время прямой трансляции курьёзный случай вызвал смех участников.",
-        },
-    ],
-    "world_tabloid": [
-        {
-            "headline": "Голливудская звезда прокомментировала слухи об отмене тура",
-            "source_name": "TMZ",
-            "url": "https://www.tmz.com",
-            "summary": "В интервью артист раскрыл неожиданные причины перерыва.",
-        },
-    ],
-    "world_politics": [
-        {
-            "headline": "Лидеры государств завершили переговоры по ключевым вопросам",
-            "source_name": "BBC World",
-            "url": "https://feeds.bbci.co.uk",
-            "summary": "Итоги Саммита привели к подписанию нового соглашения.",
-        },
-    ],
-    "tech": [
-        {
-            "headline": "Раскрыты подробности о первом ИИ-гаджете OpenAI от Джони Айва",
-            "source_name": "3DNews",
-            "url": "https://3dnews.ru",
-            "summary": "Устройство похоже на пончик и может передвигаться.",
-        },
-    ],
-}
+    return " ".join(words[:5])
 
 
 class TopicRanker:
-    """Ranks and categorizes daily news with Gemini LLM Curation."""
+
+    """Ranks and categorizes collected news, generating source statistics."""
 
     def __init__(
         self,
@@ -162,28 +34,58 @@ class TopicRanker:
 
     def get_top_curated_digest(
         self,
-        items_per_category: int = 5,
+        items_per_category: int = 10,
         top_k: int = 10,
-    ) -> tuple[list[dict[str, str]], list[dict[str, Any]]]:
-        """Get AI curated Top-10 news list and all categorized candidates.
+    ) -> tuple[list[dict[str, str]], list[dict[str, Any]], list[dict[str, Any]]]:
+        """Neural curation returning TOP-10, TOP-50 flat list, and source statistics.
 
         Returns:
-            tuple[list[dict[str, str]], list[dict[str, Any]]]:
-                - Top 10 neural-selected news headlines with details and translation
-                - All candidate news headlines grouped into category buckets
+            tuple[list[dict[str, str]], list[dict[str, Any]], list[dict[str, Any]]]:
+                - Top 10 neural-selected news headlines with source and url
+                - Top 50 candidate news headlines flat list
+                - Source audit statistics (analyzed, in_top_50, in_top_10)
         """
-        categorized_raw = self.get_categorized_news(items_per_category=items_per_category)
-        return self.curator.curate_and_translate_news(categorized_raw, top_k=top_k)
+        categorized_raw, source_stats_map, flat_top_50 = self.get_categorized_news_and_stats(
+            items_per_category=items_per_category,
+            top_50_limit=50,
+        )
 
-    def get_categorized_news(self, items_per_category: int = 5) -> list[dict[str, Any]]:
-        """Extract up to N news items for each news category with summary context."""
+        top_10, _ = self.curator.curate_and_translate_news(categorized_raw, top_k=top_k)
+
+        # Update in_top_10 count in source_stats_map
+        for item in top_10:
+            src_name = item.get("source_name", "")
+            if src_name in source_stats_map:
+                source_stats_map[src_name]["in_top_10"] += 1
+
+
+        source_stats_list = list(source_stats_map.values())
+        source_stats_list.sort(key=lambda x: x["analyzed"], reverse=True)
+
+        return top_10, flat_top_50, source_stats_list
+
+    def get_categorized_news_and_stats(
+        self,
+        items_per_category: int = 10,
+        top_50_limit: int = 50,
+    ) -> tuple[list[dict[str, Any]], dict[str, dict[str, Any]], list[dict[str, Any]]]:
+        """Extract categorized news, build top 50 flat list and source statistics."""
         source_map: dict[str, dict[str, str]] = {}
+        source_stats_map: dict[str, dict[str, Any]] = {}
+
         with contextlib.suppress(Exception):
             registry = SourceRegistry.load_from_config()
             for adapter in registry.get_all():
+                sname = getattr(adapter, "name", adapter.source_id)
                 source_map[adapter.source_id] = {
                     "category": getattr(adapter, "category", "ru_news"),
-                    "name": getattr(adapter, "name", adapter.source_id),
+                    "name": sname,
+                }
+                source_stats_map[sname] = {
+                    "name": sname,
+                    "analyzed": 0,
+                    "in_top_50": 0,
+                    "in_top_10": 0,
                 }
 
         collected_articles: list[dict[str, Any]] = []
@@ -194,29 +96,51 @@ class TopicRanker:
             cat["code"]: [] for cat in CATEGORIES_INFO
         }
         seen_headlines: set[str] = set()
+        flat_top_50: list[dict[str, Any]] = []
 
         for art in collected_articles:
             headline = art.get("headline", "").strip() if art.get("headline") else ""
             url = art.get("url", "#")
             summary = (art.get("summary") or "").strip()
-
             source_id = art.get("source_id", "")
-            if not headline or headline.lower() in seen_headlines:
+
+            if not headline:
                 continue
 
             src_info = source_map.get(source_id, {"category": "ru_news", "name": source_id})
+            sname = src_info["name"]
+
+            if sname not in source_stats_map:
+                source_stats_map[sname] = {
+                    "name": sname,
+                    "analyzed": 0,
+                    "in_top_50": 0,
+                    "in_top_10": 0,
+                }
+            source_stats_map[sname]["analyzed"] += 1
+
+            if headline.lower() in seen_headlines:
+                continue
+
+            seen_headlines.add(headline.lower())
+
+            item_dict = {
+                "headline": headline,
+                "summary": summary,
+                "source_name": sname,
+                "url": url,
+            }
+
+            if len(flat_top_50) < top_50_limit:
+                flat_top_50.append(item_dict)
+                source_stats_map[sname]["in_top_50"] += 1
+
             cat_code = src_info["category"]
             if cat_code not in categorized_buckets:
                 cat_code = "ru_news"
 
             if len(categorized_buckets[cat_code]) < items_per_category:
-                seen_headlines.add(headline.lower())
-                categorized_buckets[cat_code].append({
-                    "headline": headline,
-                    "summary": summary,
-                    "source_name": src_info["name"],
-                    "url": url,
-                })
+                categorized_buckets[cat_code].append(item_dict)
 
         result: list[dict[str, Any]] = []
         for cat in CATEGORIES_INFO:
@@ -240,6 +164,11 @@ class TopicRanker:
                 "items": items[:items_per_category],
             })
 
+        return result, source_stats_map, flat_top_50
+
+    def get_categorized_news(self, items_per_category: int = 10) -> list[dict[str, Any]]:
+        """Legacy helper for backward compatibility."""
+        result, _, _ = self.get_categorized_news_and_stats(items_per_category=items_per_category)
         return result
 
     def get_top_news_details(self, limit: int = 5) -> list[dict[str, str]]:

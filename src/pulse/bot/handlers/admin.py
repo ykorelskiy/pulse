@@ -107,7 +107,7 @@ async def cmd_force_brief(message: types.Message) -> None:
     await message.answer("🔄 Генерирую свежий бриф дня с ИИ-отбором...")
 
     ranker = TopicRanker()
-    top_10, all_30 = ranker.get_top_curated_digest(items_per_category=5, top_k=10)
+    top_10, top_50, source_stats = ranker.get_top_curated_digest(items_per_category=10, top_k=10)
     words = ranker.get_top_reader_words(limit=5)
     builder = BriefBuilder()
 
@@ -115,8 +115,10 @@ async def cmd_force_brief(message: types.Message) -> None:
     brief_text = builder.build_daily_brief(
         date_str=today_str,
         top_10_curated=top_10,
-        all_30_categorized=all_30,
+        top_50_flat=top_50,
+        source_stats=source_stats,
         top_words=words,
     )
+
 
     await send_split_message(message, brief_text)

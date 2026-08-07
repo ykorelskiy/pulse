@@ -27,7 +27,7 @@ async def run_daily_job() -> str:
     logger.info("starting_daily_brief_job", date=today_str)
 
     ranker = TopicRanker()
-    top_10, all_30 = ranker.get_top_curated_digest(items_per_category=5, top_k=10)
+    top_10, top_50, source_stats = ranker.get_top_curated_digest(items_per_category=10, top_k=10)
     raw_words = ranker.get_top_reader_words(limit=5)
 
     policy = EditorialPolicyEnforcer()
@@ -37,10 +37,12 @@ async def run_daily_job() -> str:
     brief_text = builder.build_daily_brief(
         date_str=today_str,
         top_10_curated=top_10,
-        all_30_categorized=all_30,
+        top_50_flat=top_50,
+        source_stats=source_stats,
         top_words=words,
         previous_winner_text=None,
     )
+
 
     issues_repo = IssuesRepo()
     issue = None
@@ -60,8 +62,9 @@ async def run_daily_job() -> str:
             issue_id=issue["id"],
             brief_text=brief_text,
             top_words=words,
-            top_news=all_30,
+            top_news=top_50,
         )
+
 
     # Send brief to admin chat without web link previews
     no_preview = types.LinkPreviewOptions(is_disabled=True)

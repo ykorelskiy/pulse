@@ -199,5 +199,112 @@ def main() -> None:
         print("Usage: python -m pulse.config --check")
 
 
+CATEGORIES_INFO = [
+    {
+        "code": "ru_hot",
+        "title": "Б. RU скандалы / таблоид / эксклюзивы",
+        "weight": "30%",
+        "icon": "🔥",
+    },
+    {
+        "code": "ru_news",
+        "title": "А. RU общий новостной фон (ТОП-агрегаторы)",
+        "weight": "20%",
+        "icon": "📰",
+    },
+    {
+        "code": "viral_trends",
+        "title": "Д. Сигнал вирусности (Google Trends & Reddit)",
+        "weight": "20%",
+        "icon": "⚡",
+    },
+    {
+        "code": "world_tabloid",
+        "title": "В. Международные скандалы / таблоид",
+        "weight": "15%",
+        "icon": "🌐",
+    },
+    {
+        "code": "world_politics",
+        "title": "Г. Мировая политика",
+        "weight": "10%",
+        "icon": "🏛",
+    },
+    {
+        "code": "sports",
+        "title": "Ж. Новости спорта",
+        "weight": "10%",
+        "icon": "⚽",
+    },
+    {
+        "code": "tech",
+        "title": "Е. Технологии / наука",
+        "weight": "5%",
+        "icon": "💻",
+    },
+]
+
+
+CATEGORY_FALLBACKS = {
+    "ru_hot": [
+        {
+            "headline": "В Германии верфь под прицелом неизвестных БПЛА",
+            "source_name": "Life.ru",
+            "url": "https://life.ru",
+            "summary": "БПЛА замечены над объектом.",
+        },
+    ],
+    "ru_news": [
+        {
+            "headline": "США ввели новые санкции против структуры Ирана",
+            "source_name": "Коммерсантъ",
+            "url": "https://www.kommersant.ru",
+            "summary": "Санкции затронули новые организации.",
+        },
+    ],
+    "sports": [
+        {
+            "headline": "Сборная огласила состав на предстоящий турнир",
+            "source_name": "Чемпионат",
+            "url": "https://www.championat.com",
+            "summary": "Названы участники соревнований.",
+        },
+    ],
+    "viral_trends": [
+        {
+            "headline": "Политик случайно подключился к совещанию из ванной комнаты",
+            "source_name": "Reddit r/nottheonion",
+            "url": "https://www.reddit.com/r/nottheonion/",
+            "summary": "Курьёз в прямом эфире.",
+        },
+    ],
+    "world_tabloid": [
+        {
+            "headline": "Аманда Нокс прокомментировала комедийное шоу в Эдинбурге",
+            "source_name": "TMZ",
+            "url": "https://www.tmz.com",
+            "summary": "Интервью о новом выступлении.",
+        },
+    ],
+    "world_politics": [
+        {
+            "headline": "Сенат США одобрил новый пакет законодательных инициатив",
+            "source_name": "BBC World",
+            "url": "https://feeds.bbci.co.uk",
+            "summary": "Голосование завершено.",
+        },
+    ],
+    "tech": [
+        {
+            "headline": "В Google Chrome для Android появилась панель Gemini",
+            "source_name": "3DNews",
+            "url": "https://3dnews.ru",
+            "summary": "Обновление интерфейса.",
+        },
+    ],
+}
+
+
 if __name__ == "__main__":
     main()
+
