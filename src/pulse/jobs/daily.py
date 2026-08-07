@@ -71,7 +71,7 @@ async def run_daily_job() -> str:
     bot = Bot(token=cfg.TELEGRAM_BOT_TOKEN)
     try:
         logger.info("sending_brief_to_admin", admin_chat_id=cfg.ADMIN_CHAT_ID)
-        if len(brief_text) <= 4000:
+        if len(brief_text) <= 3500:
             await bot.send_message(
                 chat_id=cfg.ADMIN_CHAT_ID,
                 text=brief_text,
@@ -79,11 +79,11 @@ async def run_daily_job() -> str:
                 link_preview_options=no_preview,
             )
         else:
-            parts = brief_text.split("\n\n")
+            lines = brief_text.split("\n")
             current_chunk = ""
-            for part in parts:
-                if len(current_chunk) + len(part) + 2 <= 4000:
-                    current_chunk = f"{current_chunk}\n\n{part}".strip()
+            for line in lines:
+                if len(current_chunk) + len(line) + 1 <= 3500:
+                    current_chunk = f"{current_chunk}\n{line}".strip() if current_chunk else line
                 else:
                     if current_chunk:
                         await bot.send_message(
@@ -92,7 +92,7 @@ async def run_daily_job() -> str:
                             parse_mode="Markdown",
                             link_preview_options=no_preview,
                         )
-                    current_chunk = part
+                    current_chunk = line
             if current_chunk:
                 await bot.send_message(
                     chat_id=cfg.ADMIN_CHAT_ID,
@@ -100,6 +100,7 @@ async def run_daily_job() -> str:
                     parse_mode="Markdown",
                     link_preview_options=no_preview,
                 )
+
     except Exception as e:
         logger.error("failed_sending_brief_to_admin", error=str(e))
     finally:

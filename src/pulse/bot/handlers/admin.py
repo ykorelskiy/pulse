@@ -27,15 +27,15 @@ async def send_split_message(message: types.Message, text: str) -> None:
     """Send text split cleanly across messages without link previews."""
     no_preview = types.LinkPreviewOptions(is_disabled=True)
 
-    if len(text) <= 4000:
+    if len(text) <= 3500:
         await message.answer(text, parse_mode="Markdown", link_preview_options=no_preview)
         return
 
-    parts = text.split("\n\n")
+    lines = text.split("\n")
     current_chunk = ""
-    for part in parts:
-        if len(current_chunk) + len(part) + 2 <= 4000:
-            current_chunk = f"{current_chunk}\n\n{part}".strip()
+    for line in lines:
+        if len(current_chunk) + len(line) + 1 <= 3500:
+            current_chunk = f"{current_chunk}\n{line}".strip() if current_chunk else line
         else:
             if current_chunk:
                 await message.answer(
@@ -43,11 +43,11 @@ async def send_split_message(message: types.Message, text: str) -> None:
                     parse_mode="Markdown",
                     link_preview_options=no_preview,
                 )
-            current_chunk = part
-
+            current_chunk = line
 
     if current_chunk:
         await message.answer(current_chunk, parse_mode="Markdown", link_preview_options=no_preview)
+
 
 
 @router.message(Command("show_words", "words"))
