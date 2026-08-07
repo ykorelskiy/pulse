@@ -274,7 +274,8 @@ class LLMCurator:
                     break
             if is_english(h):
                 clean_h = re.sub(r"[^a-zA-Z0-9\s]", "", h)
-                cand["headline"] = f"Международная новость: {clean_h[:50]}"
+                cand["headline"] = clean_h[:60]
+
 
         # Stop words to penalize petty gossip, minor sports stats, and press releases
         stop_words = [
@@ -301,6 +302,10 @@ class LLMCurator:
             cat_t = cand.get("category_title", "")
             score = 50
 
+            # Heavily penalize untranslated English items so they never enter Top 10
+            if is_english(h):
+                score -= 100
+
             if "вирус" in cat_t.lower() or "технолог" in cat_t.lower():
                 score += 25
 
@@ -312,6 +317,7 @@ class LLMCurator:
                     score += 60
 
             scored_candidates.append((score, cand))
+
 
         scored_candidates.sort(key=lambda x: x[0], reverse=True)
 
