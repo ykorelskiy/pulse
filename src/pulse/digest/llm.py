@@ -226,18 +226,22 @@ class LLMCurator:
             ),
         }
 
-        # Stop words to penalize petty consumer news and abstract placeholders
+        # Stop words to penalize petty gossip, minor sports stats, and press releases
         stop_words = [
             "дилер", "автосалон", "запчаст", "результат матча", "составы",
-            "рецензия", "мюзикл", "пылесос", "корпус", "скидк"
+            "рецензия", "мюзикл", "пылесос", "корпус", "скидк", "аморалов",
+            "памятник супруге", "визах", "турнира wta", "четвёртый круг",
+            "wildberries", "хезболл", "скр", "травли"
         ]
 
-        # High priority viral and geopolitical keywords
+        # High priority viral, science, pop culture, and major defense keywords
         priority_words = [
-            "человек-паук", "вентилятор", "зенитчик", "хиросим", "gta",
-            "зеркал", "ураган", "ведьмак", "anthropic", "мо рф", "сенат",
-            "пончик", "кенгуру", "особняк"
+            "человек-паук", "вентилятор", "зеркал", "хиросим", "gta",
+            "ведьмак", "ураган", "anthropic", "мо рф", "сенат",
+            "пончик", "кенгуру", "особняк", "зенитчик", "белый дом",
+            "шоссе", "инди", "openai"
         ]
+
 
         scored_candidates = []
         for cand in all_candidates:
