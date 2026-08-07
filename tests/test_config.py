@@ -1,8 +1,10 @@
 """Tests for pulse.config module."""
 
 from pathlib import Path
+
 import pytest
 from pydantic import ValidationError
+
 from pulse.config import ConfigManager, Settings
 
 
@@ -20,7 +22,8 @@ def test_missing_required_env_raises_validation_error(monkeypatch):
     monkeypatch.delenv("TELEGRAM_BOT_TOKEN", raising=False)
 
     with pytest.raises((ValidationError, Exception)):
-        Settings()
+        Settings(_env_file=None)
+
 
 
 def test_masked_config_output(capsys, set_env_vars):

@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-import sys
-import os
-import hashlib
-import re
 import argparse
 import difflib
+import hashlib
+import os
+import re
+import sys
+
 import yaml
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -163,7 +164,7 @@ def main():
             with open(filepath, "w", encoding="utf-8") as f:
                 f.write(content)
             print(f"  ✓ Updated {filename}")
-        
+
         with open(HASH_FILE_PATH, "w", encoding="utf-8") as f:
             f.write(current_sha256 + "\n")
         print(f"  ✓ Updated {HASH_FILE_PATH} ({current_sha256[:8]}...)")
@@ -179,7 +180,7 @@ def main():
         stored_sha256 = f.read().strip()
 
     if current_sha256 != stored_sha256:
-        print(f"[ERROR] SHA256 mismatch for STYLE_BIBLE.md!")
+        print("[ERROR] SHA256 mismatch for STYLE_BIBLE.md!")
         print(f"  Stored:  {stored_sha256}")
         print(f"  Current: {current_sha256}")
         print("Run `python check_sync.py --regenerate` to synchronize configs.")

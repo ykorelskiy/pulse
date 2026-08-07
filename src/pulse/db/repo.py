@@ -1,9 +1,11 @@
 """Supabase Repositories layer."""
 
-from datetime import date, datetime
+from datetime import datetime
 from decimal import Decimal
 from typing import Any
+
 from supabase import Client
+
 from pulse.db.client import get_supabase_client
 
 
@@ -210,7 +212,7 @@ class GuessesRepo(BaseRepo):
 class ReserveRepo(BaseRepo):
     """Repository for reserve backup posters."""
 
-    def get_available() -> dict[str, Any] | None:
+    def get_available(self) -> dict[str, Any] | None:
         res = (
             self.client.table("reserve_posters")
             .select("*")
@@ -219,6 +221,7 @@ class ReserveRepo(BaseRepo):
             .execute()
         )
         return res.data[0] if res.data else None
+
 
 
 class OrdersRepo(BaseRepo):

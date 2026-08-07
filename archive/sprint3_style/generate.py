@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-import sys
-import os
 import argparse
-import yaml
-import json
+import os
 import subprocess
+import sys
+
+import yaml
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 CONFIG_DIR = os.path.join(SCRIPT_DIR, "config")
@@ -88,7 +88,7 @@ def validate_brief(brief, limits_data, characters_data):
 def build_prompt(brief, style_block, characters_data):
     mascot_frag = characters_data.get("mascot", {}).get("prompt_fragment", "")
     supporting_dict = {c["id"]: c for c in characters_data.get("supporting", [])}
-    
+
     char_frags = []
     for c_id in brief.get("characters", []):
         if c_id in supporting_dict:
@@ -116,7 +116,7 @@ def generate_image(prompt, ref_paths, output_filepath):
     if not api_key:
         print("[NOTICE] GOOGLE_API_KEY is not set in environment. Simulating image generation for testing...")
         # Create dummy image for dry-run / testing structure
-        from PIL import Image, ImageDraw, ImageFont
+        from PIL import Image, ImageDraw
         img = Image.new("RGB", (768, 1024), color=(245, 238, 220))
         draw = ImageDraw.Draw(img)
         draw.rectangle([20, 20, 748, 1004], outline=(100, 70, 40), width=4)
@@ -128,7 +128,7 @@ def generate_image(prompt, ref_paths, output_filepath):
     try:
         from google import genai
         client = genai.Client(api_key=api_key)
-        
+
         # Load reference images if available
         input_contents = [prompt]
         for rp in ref_paths:
@@ -205,7 +205,7 @@ def main():
     for i in range(1, args.count + 1):
         img_filepath = os.path.join(brief_out_dir, f"run_{i:02d}.jpg")
         prompt_filepath = os.path.join(prompts_out_dir, f"brief_{target_brief['id']}_{target_brief['slug']}_run_{i:02d}.txt")
-        
+
         with open(prompt_filepath, "w", encoding="utf-8") as f:
             f.write(prompt)
 

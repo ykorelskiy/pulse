@@ -1,7 +1,9 @@
 """Tests for pulse.intake.storage module."""
 
 from io import BytesIO
+
 from PIL import Image
+
 from pulse.intake.storage import R2StorageClient, generate_issue_key, make_web_version
 
 

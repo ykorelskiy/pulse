@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
-import sys
-import os
 import argparse
-import yaml
-import json
 import csv
-import subprocess
+import json
+import os
+
+import yaml
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 CONFIG_DIR = os.path.join(SCRIPT_DIR, "config")
@@ -121,7 +120,7 @@ def evaluate_image_file(image_path, eval_prompt, required_elements):
         from PIL import Image
         client = genai.Client(api_key=api_key)
         img = Image.open(image_path)
-        
+
         response = client.models.generate_content(
             model='gemini-flash-latest',
             contents=[eval_prompt, img]
@@ -165,12 +164,12 @@ def main():
                 if img_name.endswith(".jpg") or img_name.endswith(".png"):
                     img_path = os.path.join(brief_dir, img_name)
                     print(f"[INFO] Evaluating {entry}/{img_name}...")
-                    
+
                     eval_res = evaluate_image_file(img_path, eval_prompt, required_elements)
-                    
+
                     checklist_found = eval_res.get("checklist_found", [])
                     c7_checklist = round(10.0 * len(checklist_found) / len(required_elements), 2)
-                    
+
                     scores = eval_res.get("scores", {})
                     scores["c7_checklist"] = c7_checklist
 

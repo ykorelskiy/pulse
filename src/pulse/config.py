@@ -1,13 +1,13 @@
 """Pulse configuration loader and validator using Pydantic Settings."""
 
-from decimal import Decimal
-import os
 import sys
+from decimal import Decimal
 from pathlib import Path
 from typing import Any
+
+import yaml
 from pydantic import BaseModel, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
-import yaml
 
 
 class SourceItem(BaseModel):
@@ -61,7 +61,7 @@ class Settings(BaseSettings):
     )
     SUPABASE_KEY: str = Field(
         ...,
-        description="Supabase publishable/anon key. Obtain from Supabase Dashboard -> Settings -> API",
+        description="Supabase anon key. Obtain from Supabase Dashboard -> Settings -> API",
     )
     SUPABASE_SERVICE_ROLE_KEY: str | None = Field(
         default=None,
@@ -71,7 +71,7 @@ class Settings(BaseSettings):
     # Storage (R2)
     R2_ENDPOINT_URL: str = Field(
         ...,
-        description="Cloudflare R2 Endpoint. Obtain from Cloudflare Dashboard -> R2 -> API Tokens",
+        description="Cloudflare R2 Endpoint",
     )
     R2_ACCESS_KEY_ID: str = Field(
         ...,
@@ -136,7 +136,7 @@ class ConfigManager:
         except Exception as e:
             sys.stderr.write(f"\n[CRITICAL CONFIGURATION ERROR]\n{e}\n")
             sys.stderr.write(
-                "\nPlease refer to .env.example to configure all required environment variables.\n\n"
+                "\nPlease check .env.example to configure required environment variables.\n\n"
             )
             raise
 
@@ -153,6 +153,8 @@ class ConfigManager:
 
     def print_masked_config(self) -> None:
         """Print current configuration with secrets masked."""
+        s_key = self.settings.SUPABASE_KEY
+        masked_key = f"{s_key[:6]}...{s_key[-4:]}" if len(s_key) >= 10 else "[MASKED]"
         print("==================================================================")
         print(" PULSE CONFIGURATION CHECK")
         print("==================================================================")
@@ -160,9 +162,8 @@ class ConfigManager:
         print(f"Log Level:         {self.settings.LOG_LEVEL}")
         print(f"Timezone:          {self.settings.TIMEZONE}")
         print(f"Supabase URL:      {self.settings.SUPABASE_URL}")
-        print(
-            f"Supabase Key:      {self.settings.SUPABASE_KEY[:6]}...{self.settings.SUPABASE_KEY[-4:]}"
-        )
+        print(f"Supabase Key:      {masked_key}")
+
         print(f"R2 Endpoint:       {self.settings.R2_ENDPOINT_URL}")
         print(f"R2 Bucket:         {self.settings.R2_BUCKET_NAME}")
         print(f"Telegram Bot Token: {self.settings.TELEGRAM_BOT_TOKEN[:8]}...[MASKED]")

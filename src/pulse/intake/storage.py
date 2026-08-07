@@ -2,8 +2,10 @@
 
 from io import BytesIO
 from typing import Any
+
 import boto3
 from PIL import Image
+
 from pulse.config import get_config
 
 

@@ -1,6 +1,7 @@
 """Pytest fixtures for offline unit testing."""
 
 from unittest.mock import MagicMock
+
 import pytest
 
 

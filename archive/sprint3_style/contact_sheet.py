@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-import os
 import csv
+import os
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 ALL_SCORES_CSV = os.path.join(SCRIPT_DIR, "all_scores.csv")

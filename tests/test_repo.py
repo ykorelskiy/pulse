@@ -2,12 +2,12 @@
 
 from decimal import Decimal
 from unittest.mock import MagicMock
+
 import pytest
+
 from pulse.db.repo import (
-    BriefsRepo,
     DuplicateIssueError,
     EventsRepo,
-    GuessesRepo,
     IssuesRepo,
     NewsRepo,
     OrdersRepo,

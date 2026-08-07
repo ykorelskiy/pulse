@@ -1,6 +1,5 @@
 """Order flow manager."""
 
-from decimal import Decimal
 
 
 class OrderFlowManager:
