@@ -1,7 +1,7 @@
 """Unit tests for Telegram bot word validation and rate limiting."""
 
 from datetime import datetime, timezone
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
@@ -41,12 +41,20 @@ async def test_rate_limit_middleware_blocks_recent_user():
     event_mock.text = "новоеслово"
     event_mock.answer = AsyncMock()
 
-    res = await middleware(handler_mock, event_mock, {})
+    with patch("pulse.bot.middlewares.datetime") as mock_dt:
+        mock_now = MagicMock()
+        mock_now.hour = 12  # Within 00:00 - 18:00 window
+        mock_now.strftime.return_value = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        mock_dt.now.return_value.astimezone.return_value = mock_now
+        mock_dt.fromisoformat.side_effect = datetime.fromisoformat
 
-    assert res is None
-    handler_mock.assert_not_called()
-    event_mock.answer.assert_called_once()
-    assert "уже присылали" in event_mock.answer.call_args[0][0]
+        res = await middleware(handler_mock, event_mock, {})
+
+        assert res is None
+        handler_mock.assert_not_called()
+        event_mock.answer.assert_called_once()
+        assert "уже присылали" in event_mock.answer.call_args[0][0]
+
 
 
 
@@ -62,7 +70,14 @@ async def test_rate_limit_middleware_allows_new_user():
     event_mock.from_user.id = 1002
     event_mock.text = "новоеслово"
 
-    res = await middleware(handler_mock, event_mock, {})
+    with patch("pulse.bot.middlewares.datetime") as mock_dt:
+        mock_now = MagicMock()
+        mock_now.hour = 12  # Within 00:00 - 18:00 window
+        mock_now.strftime.return_value = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        mock_dt.now.return_value.astimezone.return_value = mock_now
 
-    assert res == "OK"
-    handler_mock.assert_called_once()
+        res = await middleware(handler_mock, event_mock, {})
+
+        assert res == "OK"
+        handler_mock.assert_called_once()
+
