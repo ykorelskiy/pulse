@@ -1,8 +1,8 @@
 sources:
   # Категория А: RU — главные ленты и ТОП-агрегаторы (20%)
   - id: yandex_news
-    name: "Яндекс Новости — Главное дня"
-    url: "https://dzen.ru/news/rss"
+    name: "Интерфакс — Главные новости"
+    url: "https://www.interfax.ru/rss.asp"
     category: "ru_news"
     weight: 0.20
     enabled: true
@@ -94,8 +94,8 @@ sources:
   - id: baza_telegram
     name: "Baza — Эксклюзивы"
     type: "telegram"
-    channel_name: "baza"
-    url: "https://t.me/s/baza"
+    channel_name: "bazabazon"
+    url: "https://t.me/s/bazabazon"
     category: "ru_hot"
     weight: 0.30
     enabled: true
@@ -123,7 +123,9 @@ sources:
 
   - id: kp_all
     name: "Комсомольская правда — Происшествия и скандалы"
-    url: "https://www.kp.ru/rss/all.xml"
+    type: "telegram"
+    channel_name: "kpru"
+    url: "https://t.me/s/kpru"
     category: "ru_hot"
     weight: 0.30
     enabled: true
@@ -146,14 +148,14 @@ sources:
 
   - id: match_tv
     name: "Матч ТВ — Новости спорта"
-    url: "https://matchtv.ru/rss/news"
+    url: "https://matchtv.ru/news/rss"
     category: "sports"
     weight: 0.10
     enabled: true
 
   - id: rbc_sport
-    name: "РБК Спорт"
-    url: "https://rssexport.rbc.ru/rbcnews/sport/30/full.rss"
+    name: "Спорт-Экспресс — Главные новости спорта"
+    url: "https://www.sport-express.ru/services/materials/news/se/"
     category: "sports"
     weight: 0.10
     enabled: true

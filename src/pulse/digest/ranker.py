@@ -78,15 +78,6 @@ class TopicRanker:
         seen_headlines: set[str] = set()
 
         for item in raw_items:
-            # Skip victims
-            if item.get("has_victims") or item.get("status") == "rejected_victims":
-                continue
-
-            headline = (item.get("ru_headline") or item.get("headline") or "").strip()
-            if not headline or headline.lower() in seen_headlines:
-                continue
-
-            seen_headlines.add(headline.lower())
             sid = str(item.get("source_id") or "news")
             sname = source_map.get(sid, sid)
 
@@ -98,6 +89,16 @@ class TopicRanker:
                     "in_top_10": 0,
                 }
             source_stats_map[sname]["analyzed"] += 1
+
+            # Skip victims
+            if item.get("has_victims") or item.get("status") == "rejected_victims":
+                continue
+
+            headline = (item.get("ru_headline") or item.get("headline") or "").strip()
+            if not headline or headline.lower() in seen_headlines:
+                continue
+
+            seen_headlines.add(headline.lower())
 
             # Calculate Scores
             rel = item.get("relevance") or 3
