@@ -1,4 +1,4 @@
-"""Word intake handlers for Telegram bot."""
+"""Word/phrase intake handlers for Telegram bot."""
 
 import re
 
@@ -9,17 +9,18 @@ from pulse.db.repo import UsersRepo, WordsRepo
 
 router = Router()
 
-WORD_PATTERN = re.compile(r"^[a-zA-Zа-яА-ЯёЁ\-]{3,25}$")
+# Allow words or short phrase combinations up to 30 characters
+WORD_PATTERN = re.compile(r"^[a-zA-Zа-яА-ЯёЁ\s\-]{3,30}$")
 
 
 def validate_word(raw_text: str) -> str | None:
-    """Clean and validate reader's daily word submission.
+    """Clean and validate reader's daily word/phrase submission (up to 30 chars).
 
     Args:
         raw_text: Raw input string from Telegram message.
 
     Returns:
-        str | None: Cleaned lowercase word or None if invalid.
+        str | None: Cleaned lowercase phrase or None if invalid.
     """
     cleaned = raw_text.strip().lower()
     if cleaned.startswith("/word"):
@@ -29,7 +30,7 @@ def validate_word(raw_text: str) -> str | None:
         else:
             return None
 
-    if WORD_PATTERN.match(cleaned):
+    if WORD_PATTERN.match(cleaned) and 3 <= len(cleaned) <= 30:
         return cleaned
     return None
 
@@ -41,18 +42,18 @@ async def cmd_start(message: types.Message) -> None:
     text = (
         "🎨 **Привет! Я бот проекта «Пульс Дня».**\n\n"
         "Каждый день мы создаём сатирический дайджест-плакат по главным новостям.\n"
-        "Присылай своё главное **слово дня** (одно слово от 3 до 25 букв)!\n\n"
+        "Присылай своё главное **слово или словосочетание дня** (до 30 букв)!\n\n"
         "📌 **Правила:**\n"
-        "• От одного читателя принимается ровно **1 слово в 24 часа**.\n"
-        "• Самые популярные и яркие слова попадают в бриф автора и рисуются на постере.\n\n"
-        "Просто напиши мне слово в сообщении или используй команду `/word <слово>`."
+        "• От одного читателя принимается ровно **1 слово или словосочетание в 24 часа**.\n"
+        "• Самые яркие фразы попадают в бриф автора и рисуются на постере дня.\n\n"
+        "Просто напиши мне словосочетание в сообщении или используй команду `/word <фраза>`."
     )
     await message.answer(text, parse_mode="Markdown")
 
 
 @router.message(Command("myword"))
 async def cmd_myword(message: types.Message) -> None:
-    """Show user's submitted word for today."""
+    """Show user's submitted word/phrase for today."""
     if not message.from_user:
         return
 
@@ -63,16 +64,16 @@ async def cmd_myword(message: types.Message) -> None:
     if user_words:
         latest = user_words[0]
         await message.answer(
-            f"Ваше присланное слово на сегодня: **{latest['word']}**",
+            f"Ваше присланное словосочетание на сегодня: **«{latest['word']}»**",
             parse_mode="Markdown",
         )
     else:
-        await message.answer("Вы ещё не отправляли слово сегодня. Напишите его мне!")
+        await message.answer("Вы ещё не отправляли словосочетание сегодня. Напишите его мне!")
 
 
 @router.message()
 async def process_word_submission(message: types.Message) -> None:
-    """Process incoming text message as a daily word submission."""
+    """Process incoming text message as a daily word/phrase submission."""
     if not message.from_user or not message.text:
         return
 
@@ -85,12 +86,13 @@ async def process_word_submission(message: types.Message) -> None:
     word = validate_word(raw_text)
     if not word:
         await message.answer(
-            "⚠️ Пожалуйста, пришлите одиночное слово от 3 до 25 букв без цифр и эмодзи "
-            "(например: *сатира*, *нейросеть*, *технологии*).",
+            "⚠️ Пожалуйста, пришлите слово или короткое словосочетание "
+            "от 3 до 30 букв без цифр и эмодзи\n"
+            "(например: *сатира*, *нейросеть*, *технологический прорыв*).",
             parse_mode="Markdown",
         )
-        return
 
+        return
 
     users_repo = UsersRepo()
     users_repo.upsert_user(
@@ -108,6 +110,6 @@ async def process_word_submission(message: types.Message) -> None:
     )
 
     await message.answer(
-        f"✅ Отлично! Ваше слово **«{word}»** принято для сегодняшнего плаката дня!",
+        f"✅ Отлично! Ваше словосочетание **«{word}»** принято для сегодняшнего плаката дня!",
         parse_mode="Markdown",
     )

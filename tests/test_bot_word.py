@@ -12,15 +12,17 @@ from pulse.bot.middlewares import RateLimitMiddleware
 def test_validate_word_valid():
     assert validate_word("сатира") == "сатира"
     assert validate_word("  Нейросеть  ") == "нейросеть"
+    assert validate_word("технологический прорыв") == "технологический прорыв"
     assert validate_word("/word Искусственный-интеллект") == "искусственный-интеллект"
 
 
 def test_validate_word_invalid():
     assert validate_word("ab") is None  # Too short (< 3)
-    assert validate_word("a" * 30) is None  # Too long (> 25)
+    assert validate_word("a" * 35) is None  # Too long (> 30)
     assert validate_word("слово123") is None  # Contains digits
     assert validate_word("слово 😀") is None  # Contains emoji
     assert validate_word("/word") is None  # Empty command payload
+
 
 
 @pytest.mark.asyncio
