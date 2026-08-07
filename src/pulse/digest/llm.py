@@ -106,11 +106,12 @@ class LLMCurator:
             f"Вот список новостей для оценки:\n{payload_json}"
         )
 
-        for attempt in range(2):
+        models_to_try = ["gemini-2.0-flash", "gemini-2.5-flash", "gemini-1.5-pro"]
+        for model in models_to_try:
             try:
                 endpoint = (
                     "https://generativelanguage.googleapis.com/v1beta/models/"
-                    f"gemini-1.5-flash:generateContent?key={self.api_key}"
+                    f"{model}:generateContent?key={self.api_key}"
                 )
                 response = httpx.post(
                     endpoint,
@@ -126,10 +127,10 @@ class LLMCurator:
                     raw_text = data["candidates"][0]["content"]["parts"][0]["text"]
                     parsed = json.loads(raw_text)
                     if isinstance(parsed, list):
-                        logger.info("gemini_batch_scoring_success", count=len(parsed))
+                        logger.info("gemini_batch_scoring_success", model=model, count=len(parsed))
                         return parsed
             except Exception as e:
-                logger.warning("gemini_batch_scoring_attempt_failed", attempt=attempt + 1, error=str(e))
+                logger.warning("gemini_batch_scoring_attempt_failed", model=model, error=str(e))
 
         logger.error("gemini_batch_scoring_failed_using_heuristic")
         return self._heuristic_batch_scoring(items)
