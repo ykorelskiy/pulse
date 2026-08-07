@@ -1,80 +1,95 @@
-"""Admin-only commands for author @anta9onist to inspect news, words, and trigger briefs."""
+"""Admin handlers module for Pulse bot."""
+
+from datetime import datetime, timezone
 
 from aiogram import Router, types
 from aiogram.filters import Command
 
 from pulse.briefsmith.builder import BriefBuilder
 from pulse.config import get_config
-from pulse.db.repo import NewsRepo, WordsRepo
+from pulse.db.repo import WordsRepo
 from pulse.digest.ranker import TopicRanker
 
 router = Router()
 
 
 def is_admin(user: types.User | None) -> bool:
-    """Check if user is authorized admin/author (@anta9onist or matching ADMIN_CHAT_ID)."""
+    """Check if telegram user is admin (@anta9onist or matching ADMIN_CHAT_ID)."""
     if not user:
         return False
     cfg = get_config().settings
-    if user.id == cfg.ADMIN_CHAT_ID:
+    if cfg.ADMIN_CHAT_ID and user.id == cfg.ADMIN_CHAT_ID:
         return True
     return bool(user.username and user.username.lower() == "anta9onist")
 
 
 
+async def send_split_message(message: types.Message, text: str) -> None:
+    """Send text split cleanly across messages if exceeding Telegram limit."""
+    if len(text) <= 4000:
+        await message.answer(text, parse_mode="Markdown")
+        return
+
+    parts = text.split("\n\n")
+    current_chunk = ""
+    for part in parts:
+        if len(current_chunk) + len(part) + 2 <= 4000:
+            current_chunk = f"{current_chunk}\n\n{part}".strip()
+        else:
+            if current_chunk:
+                await message.answer(current_chunk, parse_mode="Markdown")
+            current_chunk = part
+
+    if current_chunk:
+        await message.answer(current_chunk, parse_mode="Markdown")
+
+
 @router.message(Command("show_words", "words"))
 async def cmd_show_words(message: types.Message) -> None:
-    """Show top reader words/phrases submitted today with frequency counts."""
+    """Show top reader submitted words with frequency count for admin."""
     if not is_admin(message.from_user):
         return
 
-    words_repo = WordsRepo()
-    recent = words_repo.get_recent_words(limit=200)
+    repo = WordsRepo()
+    recent = repo.get_recent_words(limit=200)
 
     if not recent:
-        await message.answer("ℹ️ В базе пока нет присланных слов за сегодня.")
+        await message.answer("📊 **Топ слов от читателей:**\nСлов пока нет.")
         return
 
-    # Count occurrences of phrases
-    counter: dict[str, int] = {}
+    counts: dict[str, int] = {}
     for entry in recent:
-        w = entry.get("word")
+        w = entry.get("word", "").strip().lower()
         if w:
-            counter[w] = counter.get(w, 0) + 1
+            counts[w] = counts.get(w, 0) + 1
 
-    sorted_words = sorted(counter.items(), key=lambda x: x[1], reverse=True)[:20]
+    sorted_words = sorted(counts.items(), key=lambda x: x[1], reverse=True)[:20]
 
-    lines = ["📊 **Топ слов и словосочетаний от читателей за сегодня:**\n"]
-    for idx, (word, count) in enumerate(sorted_words, 1):
-        lines.append(f"{idx}. **«{word}»** — {count} раз(а)")
+    lines = ["📊 **Топ 20 фраз и слов от читателей за последнее время:**\n"]
+    for idx, (word, cnt) in enumerate(sorted_words, 1):
+        lines.append(f"{idx}. **{word}** — {cnt} шт.")
 
+    lines.append(f"\nВсего получено фраз: {len(recent)}")
     await message.answer("\n".join(lines), parse_mode="Markdown")
 
 
 @router.message(Command("show_news", "news"))
 async def cmd_show_news(message: types.Message) -> None:
-    """Show top 10 news headlines and extracted key phrases for today."""
+    """Show top 20 categorized news headlines for admin."""
     if not is_admin(message.from_user):
         return
 
-    news_repo = NewsRepo()
-    latest_news = news_repo.get_latest_news(limit=20)
-    ranker = TopicRanker(news_repo=news_repo)
-    top_phrases = ranker.get_top_news_phrases(limit=10)
+    ranker = TopicRanker()
+    categorized = ranker.get_categorized_news(items_per_category=3)
 
-    lines = ["📰 **Топ фраз и новостей за сегодня:**\n"]
-    lines.append("🔹 **Сформированные ключевые фразы:**")
-    for idx, phrase in enumerate(top_phrases, 1):
-        lines.append(f"  {idx}. **{phrase}**")
+    lines = ["📰 **Топ новостей по 6 категориям:**"]
+    for cat in categorized:
+        lines.append(f"\n{cat['icon']} **{cat['title']} ({cat['weight']}):**")
+        for idx, item in enumerate(cat["items"], 1):
+            lines.append(f"  {idx}. [{item['source_name']}] [{item['headline']}]({item['url']})")
 
-    if latest_news:
-        lines.append("\n📌 **Свежие заголовки RSS:**")
-        for idx, art in enumerate(latest_news[:10], 1):
-            headline = art.get("headline", "")
-            url = art.get("url", "#")
-            lines.append(f"  {idx}. [{headline}]({url})")
-
-    await message.answer("\n".join(lines), parse_mode="Markdown", disable_web_page_preview=True)
+    text = "\n".join(lines)
+    await send_split_message(message, text)
 
 
 @router.message(Command("brief", "force_brief"))
@@ -86,11 +101,10 @@ async def cmd_force_brief(message: types.Message) -> None:
     await message.answer("🔄 Генерирую свежий бриф дня...")
 
     ranker = TopicRanker()
-    categorized_news = ranker.get_categorized_news(items_per_category=5)
+    categorized_news = ranker.get_categorized_news(items_per_category=3)
     words = ranker.get_top_reader_words(limit=5)
     builder = BriefBuilder()
 
-    from datetime import datetime, timezone
     today_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     brief_text = builder.build_daily_brief(
         date_str=today_str,
@@ -98,6 +112,4 @@ async def cmd_force_brief(message: types.Message) -> None:
         top_words=words,
     )
 
-
-
-    await message.answer(brief_text, parse_mode="Markdown")
+    await send_split_message(message, brief_text)
