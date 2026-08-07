@@ -1,16 +1,44 @@
-"""Supabase Repositories layer with unified fallback memory store."""
+"""Supabase Repositories layer with persistent local JSON fallback storage."""
 
+import json
 from datetime import datetime, timezone
 from decimal import Decimal
+from pathlib import Path
 from typing import Any
 
 from supabase import Client
 
 from pulse.db.client import get_supabase_client
 
-# In-memory fallback storage when Supabase database is unreachable
-MEMORY_WORDS_STORE: list[dict[str, Any]] = []
+# Local persistent JSON fallback file for when live Supabase is unconfigured
+FALLBACK_FILE = Path.cwd() / "data" / "words_fallback.json"
 
+
+def _load_fallback_words() -> list[dict[str, Any]]:
+    """Load words from persistent local JSON file."""
+    if not FALLBACK_FILE.exists():
+        return []
+    try:
+        with open(FALLBACK_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return []
+
+
+def _save_fallback_word(entry: dict[str, Any]) -> None:
+    """Save word entry to persistent local JSON file."""
+    try:
+        FALLBACK_FILE.parent.mkdir(parents=True, exist_ok=True)
+        words = _load_fallback_words()
+        words.insert(0, entry)
+        with open(FALLBACK_FILE, "w", encoding="utf-8") as f:
+            json.dump(words[:200], f, ensure_ascii=False, indent=2)
+    except Exception:
+        pass
+
+
+# Global reference for backward compatibility
+MEMORY_WORDS_STORE = _load_fallback_words()
 
 
 class DuplicateIssueError(Exception):
@@ -73,7 +101,7 @@ class UsersRepo(BaseRepo):
 
 
 class WordsRepo(BaseRepo):
-    """Repository for reader word submissions with unified fallback memory store."""
+    """Repository for reader word submissions with persistent local fallback."""
 
     def add_word(
         self,
@@ -91,8 +119,8 @@ class WordsRepo(BaseRepo):
         if tenant_id:
             data["tenant_id"] = tenant_id
 
-        # Always record to MEMORY_WORDS_STORE for fallback consistency
-        MEMORY_WORDS_STORE.insert(0, data)
+        # Save to persistent local JSON fallback file
+        _save_fallback_word(data)
 
         if not self.client:
             return data
@@ -118,7 +146,8 @@ class WordsRepo(BaseRepo):
             except Exception:
                 db_words = []
 
-        combined = db_words + MEMORY_WORDS_STORE
+        local_words = _load_fallback_words()
+        combined = db_words + local_words
         seen = set()
         unique_list = []
         for item in combined:
