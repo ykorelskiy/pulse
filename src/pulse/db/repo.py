@@ -1,12 +1,16 @@
-"""Supabase Repositories layer."""
+"""Supabase Repositories layer with unified fallback memory store."""
 
-from datetime import datetime
+from datetime import datetime, timezone
 from decimal import Decimal
 from typing import Any
 
 from supabase import Client
 
 from pulse.db.client import get_supabase_client
+
+# In-memory fallback storage when Supabase database is unreachable
+MEMORY_WORDS_STORE: list[dict[str, Any]] = []
+
 
 
 class DuplicateIssueError(Exception):
@@ -44,7 +48,7 @@ class UsersRepo(BaseRepo):
             "username": username,
             "first_name": first_name,
             "last_name": last_name,
-            "updated_at": datetime.now().isoformat(),
+            "updated_at": datetime.now(timezone.utc).isoformat(),
         }
         if tenant_id:
             data["tenant_id"] = tenant_id
@@ -69,7 +73,7 @@ class UsersRepo(BaseRepo):
 
 
 class WordsRepo(BaseRepo):
-    """Repository for reader word submissions."""
+    """Repository for reader word submissions with unified fallback memory store."""
 
     def add_word(
         self,
@@ -82,10 +86,13 @@ class WordsRepo(BaseRepo):
             "user_id": user_id,
             "username": username,
             "word": word,
-            "created_at": datetime.now().isoformat(),
+            "created_at": datetime.now(timezone.utc).isoformat(),
         }
         if tenant_id:
             data["tenant_id"] = tenant_id
+
+        # Always record to MEMORY_WORDS_STORE for fallback consistency
+        MEMORY_WORDS_STORE.insert(0, data)
 
         if not self.client:
             return data
@@ -96,20 +103,31 @@ class WordsRepo(BaseRepo):
         except Exception:
             return data
 
-    def get_recent_words(self, limit: int = 10) -> list[dict[str, Any]]:
-        if not self.client:
-            return []
-        try:
-            res = (
-                self.client.table("words")
-                .select("*")
-                .order("created_at", desc=True)
-                .limit(limit)
-                .execute()
-            )
-            return res.data or []
-        except Exception:
-            return []
+    def get_recent_words(self, limit: int = 50) -> list[dict[str, Any]]:
+        db_words: list[dict[str, Any]] = []
+        if self.client:
+            try:
+                res = (
+                    self.client.table("words")
+                    .select("*")
+                    .order("created_at", desc=True)
+                    .limit(limit)
+                    .execute()
+                )
+                db_words = res.data or []
+            except Exception:
+                db_words = []
+
+        combined = db_words + MEMORY_WORDS_STORE
+        seen = set()
+        unique_list = []
+        for item in combined:
+            key = (item.get("user_id"), item.get("word"), item.get("created_at"))
+            if key not in seen:
+                seen.add(key)
+                unique_list.append(item)
+
+        return unique_list[:limit]
 
 
 class NewsRepo(BaseRepo):

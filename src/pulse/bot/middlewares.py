@@ -7,10 +7,7 @@ from zoneinfo import ZoneInfo
 from aiogram import BaseMiddleware
 from aiogram.types import TelegramObject
 
-from pulse.db.repo import WordsRepo
-
-# In-memory fallback storage when Supabase database is unreachable
-MEMORY_WORDS_STORE: list[dict[str, Any]] = []
+from pulse.db.repo import MEMORY_WORDS_STORE, WordsRepo
 
 MSK_TZ = ZoneInfo("Europe/Moscow")
 
