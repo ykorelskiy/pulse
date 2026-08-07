@@ -1,4 +1,5 @@
 briefsmith:
   max_top_words: 5
-  max_top_news: 3
+  max_top_news: 5  # Updated per user directive: 5 key news phrases
+  extract_key_phrases: true
   template_style: "assisted_author_brief"
