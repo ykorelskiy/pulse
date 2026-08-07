@@ -71,35 +71,45 @@ async def run_daily_job() -> str:
     bot = Bot(token=cfg.TELEGRAM_BOT_TOKEN)
     try:
         logger.info("sending_brief_to_admin", admin_chat_id=cfg.ADMIN_CHAT_ID)
-        if len(brief_text) <= 3500:
-            await bot.send_message(
-                chat_id=cfg.ADMIN_CHAT_ID,
-                text=brief_text,
-                parse_mode="Markdown",
-                link_preview_options=no_preview,
-            )
-        else:
-            lines = brief_text.split("\n")
-            current_chunk = ""
-            for line in lines:
-                if len(current_chunk) + len(line) + 1 <= 3500:
-                    current_chunk = f"{current_chunk}\n{line}".strip() if current_chunk else line
-                else:
-                    if current_chunk:
+        lines = brief_text.split("\n")
+        current_chunk = ""
+        for line in lines:
+            if len(current_chunk) + len(line) + 1 <= 3000:
+                current_chunk = f"{current_chunk}\n{line}".strip() if current_chunk else line
+            else:
+                if current_chunk:
+                    try:
                         await bot.send_message(
                             chat_id=cfg.ADMIN_CHAT_ID,
                             text=current_chunk,
                             parse_mode="Markdown",
                             link_preview_options=no_preview,
                         )
-                    current_chunk = line
-            if current_chunk:
+                    except Exception:
+                        await bot.send_message(
+                            chat_id=cfg.ADMIN_CHAT_ID,
+                            text=current_chunk,
+                            parse_mode=None,
+                            link_preview_options=no_preview,
+                        )
+                    await asyncio.sleep(0.3)
+                current_chunk = line
+        if current_chunk:
+            try:
                 await bot.send_message(
                     chat_id=cfg.ADMIN_CHAT_ID,
                     text=current_chunk,
                     parse_mode="Markdown",
                     link_preview_options=no_preview,
                 )
+            except Exception:
+                await bot.send_message(
+                    chat_id=cfg.ADMIN_CHAT_ID,
+                    text=current_chunk,
+                    parse_mode=None,
+                    link_preview_options=no_preview,
+                )
+
 
     except Exception as e:
         logger.error("failed_sending_brief_to_admin", error=str(e))

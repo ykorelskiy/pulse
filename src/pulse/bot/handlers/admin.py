@@ -1,5 +1,4 @@
-"""Admin handlers module for Pulse bot."""
-
+import asyncio
 from datetime import datetime, timezone
 
 from aiogram import Router, types
@@ -24,29 +23,38 @@ def is_admin(user: types.User | None) -> bool:
 
 
 async def send_split_message(message: types.Message, text: str) -> None:
-    """Send text split cleanly across messages without link previews."""
+    """Send text split cleanly across messages with fallback parsing and sleep delay."""
     no_preview = types.LinkPreviewOptions(is_disabled=True)
-
-    if len(text) <= 3500:
-        await message.answer(text, parse_mode="Markdown", link_preview_options=no_preview)
-        return
 
     lines = text.split("\n")
     current_chunk = ""
     for line in lines:
-        if len(current_chunk) + len(line) + 1 <= 3500:
+        if len(current_chunk) + len(line) + 1 <= 3000:
             current_chunk = f"{current_chunk}\n{line}".strip() if current_chunk else line
         else:
             if current_chunk:
-                await message.answer(
-                    current_chunk,
-                    parse_mode="Markdown",
-                    link_preview_options=no_preview,
-                )
+                try:
+                    await message.answer(
+                        current_chunk, parse_mode="Markdown", link_preview_options=no_preview
+                    )
+                except Exception:
+                    await message.answer(
+                        current_chunk, parse_mode=None, link_preview_options=no_preview
+                    )
+                await asyncio.sleep(0.3)
             current_chunk = line
 
     if current_chunk:
-        await message.answer(current_chunk, parse_mode="Markdown", link_preview_options=no_preview)
+        try:
+            await message.answer(
+                current_chunk, parse_mode="Markdown", link_preview_options=no_preview
+            )
+        except Exception:
+            await message.answer(
+                current_chunk, parse_mode=None, link_preview_options=no_preview
+            )
+
+
 
 
 

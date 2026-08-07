@@ -157,7 +157,7 @@ sources:
     weight: 0.10
     enabled: true
 
-  # Категория В: Международные скандалы/таблоиды (15%)
+  # Категория В: Международные курьёзы/таблоиды (15%)
   - id: tmz_gossip
     name: "TMZ — Entertainment & Celebrity News"
     url: "https://www.tmz.com/rss.xml"
@@ -172,27 +172,20 @@ sources:
     weight: 0.15
     enabled: true
 
-  - id: hollywood_gossip
-    name: "The Hollywood Gossip"
-    url: "https://feeds.thehollywoodgossip.com"
-    category: "world_tabloid"
-    weight: 0.15
-    enabled: true
-
-  # Категория Г: Мировая политика/острые международные темы (10%)
+  # Категория Г: Мировая политика (ОТКЛЮЧЕНА по требованию автора)
   - id: bbc_world
     name: "BBC News — World"
     url: "https://feeds.bbci.co.uk/news/world/rss.xml"
     category: "world_politics"
-    weight: 0.10
-    enabled: true
+    weight: 0.00
+    enabled: false
 
   - id: guardian_world
     name: "The Guardian — World News"
     url: "https://www.theguardian.com/world/rss"
     category: "world_politics"
-    weight: 0.10
-    enabled: true
+    weight: 0.00
+    enabled: false
 
   # Категория Д: Сигнал вирусности (Google Trends & Reddit, 20%)
   - id: google_trends_ru
