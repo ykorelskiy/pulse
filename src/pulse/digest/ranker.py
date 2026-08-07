@@ -1,44 +1,17 @@
-"""News and words ranker and key phrase extractor with source attribution."""
+"""News and words ranker with original headline selection."""
 
-import re
 from collections import Counter
 
 from pulse.db.repo import NewsRepo, WordsRepo
 
-STOP_WORDS = {
-    "и", "в", "во", "не", "что", "он", "на", "я", "с", "со", "как", "а", "то", "все",
-    "она", "так", "его", "но", "да", "ты", "к", "у", "же", "вы", "за", "бы", "по",
-    "только", "ее", "мне", "было", "вот", "от", "меня", "еще", "нет", "о", "из", "ему",
-    "теперь", "когда", "даже", "ну", "вдруг", "ли", "если", "уже", "или", "ни", "быть",
-    "был", "него", "до", "вас", "нибудь", "опять", "уж", "вам", "ведь", "там", "потом",
-    "себя", "ничего", "ей", "может", "они", "тут", "где", "есть", "надо", "ней", "для",
-    "мы", "тебя", "их", "чем", "была", "сам", "чтоб", "без", "будто", "чего", "раз",
-    "тоже", "себе", "под", "будет", "ж", "тогда", "кто", "этот", "того", "потому",
-    "этого", "какой", "совсем", "ним", "здесь", "этом", "один", "почти", "мой", "тем",
-    "чтобы", "нее", "сейчас", "были", "куда", "зачем", "всех", "никогда", "можно",
-    "при", "наконец", "два", "об", "другой", "хоть", "после", "над", "больше", "тот",
-    "через", "эти", "нас", "про", "всего", "них", "какая", "много", "разве", "три",
-    "эту", "моя", "впрочем", "хорошо", "свою", "этой", "перед", "иногда", "лучше",
-    "чуть", "том", "нельзя", "такой", "им", "более", "всегда", "конечно", "всю", "между",
-}
-
 
 def extract_key_phrase(headline: str) -> str:
-    """Extract expressive 2-4 word key phrase from a headline."""
-    cleaned = re.sub(r"[^\w\s\-]", " ", headline)
-    words = [w for w in cleaned.split() if w.lower() not in STOP_WORDS and len(w) > 2]
-
-    if not words:
-        return headline[:30]
-
-    if len(words) >= 3:
-        return " ".join(words[:3])
-    elif len(words) == 2:
-        return " ".join(words[:2])
-    return words[0]
+    """Return headline cleanly formatted as a key phrase."""
+    return headline.strip()
 
 
 class TopicRanker:
+
     """Ranks RSS news items and reader words to form daily digest topics."""
 
     def __init__(
@@ -49,64 +22,70 @@ class TopicRanker:
         self.news_repo = news_repo or NewsRepo()
         self.words_repo = words_repo or WordsRepo()
 
-
     def get_top_news_details(self, limit: int = 5) -> list[dict[str, str]]:
-        """Extract top N key news phrases along with their original headline and URL.
+        """Extract top N news headlines from latest collected RSS articles.
 
         Returns:
-            list[dict[str, str]]: List of dicts with 'phrase', 'headline', 'url'.
+            list[dict[str, str]]: Items with keys 'headline', 'source_id', 'url', 'category'.
         """
         results: list[dict[str, str]] = []
-        seen_phrases = set()
+        seen_headlines = set()
 
         try:
-            articles = self.news_repo.get_latest_news(limit=25)
+            articles = self.news_repo.get_latest_news(limit=50)
             for art in articles:
-                headline = art.get("headline", "")
-                url = art.get("url", "")
+                headline = art.get("headline", "").strip()
+                url = art.get("url", "#")
+                source_id = art.get("source_id", "news")
                 if not headline:
                     continue
-                phrase = extract_key_phrase(headline)
-                if phrase and phrase.lower() not in seen_phrases:
-                    seen_phrases.add(phrase.lower())
+
+                clean_h = headline.lower()
+                if clean_h not in seen_headlines:
+                    seen_headlines.add(clean_h)
                     results.append({
-                        "phrase": phrase,
+                        "phrase": headline,
                         "headline": headline,
                         "url": url,
+                        "source_id": source_id,
                     })
                 if len(results) >= limit:
                     break
         except Exception:
             pass
 
-        # Informative realistic news fallbacks if news collection is pending
+        # Realistic fallback headlines across categories if collection is pending
         fallbacks = [
             {
-                "phrase": "Илон Маск и Марс",
+                "phrase": "Илон Маск анонсировал новый этап программы освоения Марса",
                 "headline": "Илон Маск анонсировал новый этап программы освоения Марса",
                 "url": "https://ria.ru",
+                "source_id": "ria_news",
             },
             {
-                "phrase": "Скандал в шоу-бизнесе",
+                "phrase": "Звёзды эстрады оказались в центре громкого обсуждения",
                 "headline": "Звёзды эстрады оказались в центре громкого обсуждения",
                 "url": "https://www.starhit.ru",
+                "source_id": "starhit_showbiz",
             },
             {
-                "phrase": "Переговоры и дипломатия",
+                "phrase": "Опубликованы свежие подробности международных переговоров",
                 "headline": "Опубликованы свежие подробности международных переговоров",
                 "url": "https://lenta.ru",
+                "source_id": "lenta_news",
             },
             {
-                "phrase": "Инфляция и рынки",
+                "phrase": "Центробанк опубликовал обновлённый макроэкономический прогноз",
                 "headline": "Центробанк опубликовал обновлённый макроэкономический прогноз",
                 "url": "https://rssexport.rbc.ru",
+                "source_id": "rbc_news",
             },
             {
-                "phrase": "Прорыв ИИ-технологий",
+                "phrase": "Представлена новая нейросеть с рекордной производительностью",
                 "headline": "Представлена новая нейросеть с рекордной производительностью",
                 "url": "https://3dnews.ru",
+                "source_id": "threednews",
             },
-
         ]
 
         while len(results) < limit:
@@ -116,9 +95,9 @@ class TopicRanker:
         return results[:limit]
 
     def get_top_news_phrases(self, limit: int = 5) -> list[str]:
-        """Extract top N key news phrases."""
+        """Extract top N news headlines."""
         details = self.get_top_news_details(limit=limit)
-        return [item["phrase"] for item in details]
+        return [item["headline"] for item in details]
 
     def get_top_reader_words(self, limit: int = 5) -> list[str]:
         """Aggregate top N most submitted words from readers."""

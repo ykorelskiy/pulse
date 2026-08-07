@@ -1,57 +1,146 @@
 sources:
-  # 1. Политика и Главные новости дня
+  # Категория А: RU — главные ленты (базовый новостной фон, 20%)
   - id: rbc_news
     name: "РБК — Главные новости"
     url: "https://rssexport.rbc.ru/rbcnews/news/30/full.rss"
-    category: "politics"
+    category: "ru_news"
+    weight: 0.20
     enabled: true
 
   - id: lenta_news
-    name: "Лента.ру — Главные новости"
-    url: "https://lenta.ru/rss/news"
-    category: "politics"
+    name: "Лента.ру — Новости"
+    url: "https://lenta.ru/rss"
+    category: "ru_news"
+    weight: 0.20
+    enabled: true
+
+  - id: ria_news
+    name: "РИА Новости — Главное"
+    url: "https://ria.ru/export/rss2/archive/index.xml"
+    category: "ru_news"
+    weight: 0.20
+    enabled: true
+
+  - id: gazeta_politics
+    name: "Газета.Ru — Политика"
+    url: "https://www.gazeta.ru/export/rss/politics.xml"
+    category: "ru_news"
+    weight: 0.20
+    enabled: true
+
+  - id: gazeta_social
+    name: "Газета.Ru — Общество"
+    url: "https://www.gazeta.ru/export/rss/social.xml"
+    category: "ru_news"
+    weight: 0.20
+    enabled: true
+
+  - id: tass_news
+    name: "ТАСС — Главные новости"
+    url: "https://tass.ru/rss/v2.xml"
+    category: "ru_news"
+    weight: 0.20
     enabled: true
 
   - id: kommersant_news
     name: "Коммерсантъ — Новости"
     url: "https://www.kommersant.ru/RSS/news.xml"
-    category: "politics"
+    category: "ru_news"
+    weight: 0.20
     enabled: true
 
-  - id: ria_main
-    name: "РИА Новости — Лента"
-    url: "https://ria.ru/export/rss2/archive/index.xml"
-    category: "politics"
-    enabled: true
-
-  # 2. Светская хроника, шоу-бизнес, таблоиды и скандалы дня
+  # Категория Б: RU — «горячее»/скандальное/таблоид (30%)
   - id: starhit_showbiz
-    name: "StarHit — Светская хроника и скандалы"
+    name: "StarHit — Светская хроника"
     url: "https://www.starhit.ru/rss.xml"
-    category: "celebrity"
+    category: "ru_hot"
+    weight: 0.30
     enabled: true
 
   - id: sevendays_showbiz
-    name: "7Дней.ру — Шоу-бизнес"
+    name: "7Дней.ру — Скандалы и шоу-бизнес"
     url: "https://7days.ru/rss"
-    category: "celebrity"
+    category: "ru_hot"
+    weight: 0.30
     enabled: true
 
   - id: kp_all
-    name: "Комсомольская правда — Новости и скандалы"
+    name: "Комсомольская правда — Происшествия и скандалы"
     url: "https://www.kp.ru/rss/all.xml"
-    category: "celebrity"
+    category: "ru_hot"
+    weight: 0.30
     enabled: true
 
-  # 3. Технологии, IT и инновации
+  # Категория В: Международные скандалы/таблоиды (15%)
+  - id: tmz_gossip
+    name: "TMZ — Entertainment & Celebrity News"
+    url: "https://www.tmz.com/rss.xml"
+    category: "world_tabloid"
+    weight: 0.15
+    enabled: true
+
+  - id: pagesix_gossip
+    name: "Page Six — Celebrity Gossip"
+    url: "https://pagesix.com/feed"
+    category: "world_tabloid"
+    weight: 0.15
+    enabled: true
+
+  - id: hollywood_gossip
+    name: "The Hollywood Gossip"
+    url: "https://feeds.thehollywoodgossip.com"
+    category: "world_tabloid"
+    weight: 0.15
+    enabled: true
+
+  # Категория Г: Мировая политика/острые международные темы (10%)
+  - id: bbc_world
+    name: "BBC News — World"
+    url: "https://feeds.bbci.co.uk/news/world/rss.xml"
+    category: "world_politics"
+    weight: 0.10
+    enabled: true
+
+  - id: guardian_world
+    name: "The Guardian — World News"
+    url: "https://www.theguardian.com/world/rss"
+    category: "world_politics"
+    weight: 0.10
+    enabled: true
+
+  # Категория Д: Сигнал вирусности (Google Trends & Reddit, 20%)
+  - id: google_trends_ru
+    name: "Google Trends Russia"
+    url: "https://trends.google.com/trending/rss?geo=RU"
+    category: "viral_trends"
+    weight: 0.20
+    enabled: true
+
+  - id: reddit_nottheonion
+    name: "Reddit — r/nottheonion"
+    url: "https://www.reddit.com/r/nottheonion/.rss"
+    category: "viral_trends"
+    weight: 0.20
+    enabled: true
+
+  # Категория Е: Технологии и наука (5%)
   - id: habr_top
-    name: "Хабр — Лучшие статьи дня"
+    name: "Хабр — Лучшее за сутки"
     url: "https://habr.com/ru/rss/best/daily/?fl=ru"
     category: "tech"
+    weight: 0.05
+    enabled: true
+
+  - id: techcrunch
+    name: "TechCrunch"
+    url: "https://techcrunch.com/feed"
+    category: "tech"
+    weight: 0.05
     enabled: true
 
   - id: threednews
     name: "3DNews — Новости технологий"
     url: "https://3dnews.ru/news/rss/"
     category: "tech"
+    weight: 0.05
     enabled: true

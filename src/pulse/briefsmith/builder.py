@@ -9,7 +9,7 @@ class BriefBuilder:
     def build_daily_brief(
         self,
         date_str: str,
-        top_news: list[Any],  # Can be list[str] or list[dict[str, str]]
+        top_news: list[Any],
         top_words: list[str],
         previous_winner_text: str | None = None,
     ) -> str:
@@ -17,7 +17,7 @@ class BriefBuilder:
 
         Args:
             date_str: Target issue date string (YYYY-MM-DD).
-            top_news: List of key news phrases or list of dicts with 'phrase', 'headline', 'url'.
+            top_news: List of news headline strings or dicts with 'headline', 'source_id', 'url'.
             top_words: Top 5 reader submitted words.
             previous_winner_text: Yesterday's decoded guess text if available.
 
@@ -27,17 +27,17 @@ class BriefBuilder:
         lines = [
             "🎨 **БРИФ ПЛАКАТА ДНЯ ДЛЯ АВТОРА (@anta9onist)**",
             f"📅 **Дата:** {date_str}\n",
-            "1️⃣ **5 ключевых событий/фраз дня (с привязкой к новостям):**",
+            "1️⃣ **Ключевые новости дня (заголовки и источники):**",
         ]
 
         for item in top_news:
             if isinstance(item, dict):
-                phrase = item.get("phrase", "")
-                headline = item.get("headline", "")
+                headline = item.get("headline", item.get("phrase", ""))
+                source_id = item.get("source_id", "новости")
                 url = item.get("url", "#")
-                lines.append(f"  • **{phrase}** — [{headline}]({url})")
+                lines.append(f"  • [{source_id}] **«{headline}»** — [источник]({url})")
             else:
-                lines.append(f"  • **{item}**")
+                lines.append(f"  • **«{item}»**")
 
         lines.append("\n2️⃣ **5 главных слов от читателей:**")
         words_str = ", ".join(top_words) if top_words else "пока нет слов"
@@ -50,8 +50,8 @@ class BriefBuilder:
         lines.append("4️⃣ **Инструкция для генерации в ChatGPT:**")
         lines.append(
             "Создай плакат-сатиру в эстетике плаката 70–80-х годов. Обязательно "
-            "включи персонажа — жестяного робота ПУЛЬС. Объедини ключевые фразы дня "
-            f"({words_str}) и детали событий."
+            "включи персонажа — жестяного робота ПУЛЬС. Объедини главные сюжеты "
+            f"дня ({words_str}) и детали событий."
         )
 
         return "\n".join(lines)

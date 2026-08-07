@@ -3,6 +3,12 @@
     "user_id": 12345,
     "username": "testuser",
     "word": "сатира",
+    "created_at": "2026-08-07T15:45:10.017069+00:00"
+  },
+  {
+    "user_id": 12345,
+    "username": "testuser",
+    "word": "сатира",
     "created_at": "2026-08-07T15:23:18.290976+00:00"
   },
   {
