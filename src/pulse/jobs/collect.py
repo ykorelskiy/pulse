@@ -12,53 +12,57 @@ from pulse.sources.registry import SourceRegistry
 
 
 async def process_pending_scoring(repo: NewsRepo, curator: LLMCurator, clusterer: NewsClusterer, logger: Any) -> int:
-    """Evaluate pending news items in micro-batches and update Supabase."""
-    pending_items = repo.get_pending_news(limit=50)
-    if not pending_items:
-        return 0
+    """Evaluate ALL pending news items in micro-batches and update Supabase."""
+    total_scored = 0
+    max_iterations = 100  # Safety limit to prevent infinite loops
 
-    scored_count = 0
-    recent_24h = repo.get_scored_24h_news()
+    for iteration in range(max_iterations):
+        pending_items = repo.get_pending_news(limit=200)
+        if not pending_items:
+            break
 
-    # Process in micro-batches of 15-20 items
-    batch_size = 15
-    for i in range(0, len(pending_items), batch_size):
-        batch = pending_items[i:i + batch_size]
-        scored_results = curator.score_batch(batch)
-        scored_map = {str(s["id"]): s for s in scored_results}
+        logger.info("scoring_iteration", iteration=iteration, pending_count=len(pending_items))
+        recent_24h = repo.get_scored_24h_news()
 
-        for item in batch:
-            item_id = str(item.get("id"))
-            eval_res = scored_map.get(item_id, {})
+        # Process in micro-batches of 15 items
+        batch_size = 15
+        for i in range(0, len(pending_items), batch_size):
+            batch = pending_items[i:i + batch_size]
+            scored_results = curator.score_batch(batch)
+            scored_map = {str(s["id"]): s for s in scored_results}
 
-            has_victims = eval_res.get("has_victims", False)
-            ru_headline = eval_res.get("ru_headline") or item.get("headline", "")
+            for item in batch:
+                item_id = str(item.get("id"))
+                eval_res = scored_map.get(item_id, {})
 
-            if has_victims:
-                status = "rejected_victims"
-                cluster_id, _ = clusterer.find_or_create_cluster({"id": item_id, "ru_headline": ru_headline}, recent_24h)
-            else:
-                cluster_id, is_archived = clusterer.find_or_create_cluster({"id": item_id, "ru_headline": ru_headline}, recent_24h)
-                status = "archived" if is_archived else "scored"
+                has_victims = eval_res.get("has_victims", False)
+                ru_headline = eval_res.get("ru_headline") or item.get("headline", "")
 
-            update_data = {
-                "ru_headline": ru_headline,
-                "has_victims": has_victims,
-                "relevance": eval_res.get("relevance", 3),
-                "comedic_potential": eval_res.get("comedic_potential", 2),
-                "significance": eval_res.get("significance", 2),
-                "tone": eval_res.get("tone", 0),
-                "cluster_id": cluster_id,
-                "status": status,
-            }
+                if has_victims:
+                    status = "rejected_victims"
+                    cluster_id, _ = clusterer.find_or_create_cluster({"id": item_id, "ru_headline": ru_headline}, recent_24h)
+                else:
+                    cluster_id, is_archived = clusterer.find_or_create_cluster({"id": item_id, "ru_headline": ru_headline}, recent_24h)
+                    status = "archived" if is_archived else "scored"
 
-            repo.update_scored_article(item_id, update_data)
-            scored_count += 1
+                update_data = {
+                    "ru_headline": ru_headline,
+                    "has_victims": has_victims,
+                    "relevance": eval_res.get("relevance", 3),
+                    "comedic_potential": eval_res.get("comedic_potential", 2),
+                    "significance": eval_res.get("significance", 2),
+                    "tone": eval_res.get("tone", 0),
+                    "cluster_id": cluster_id,
+                    "status": status,
+                }
 
-        await asyncio.sleep(2.0)
+                repo.update_scored_article(item_id, update_data)
+                total_scored += 1
 
-    logger.info("microbatch_scoring_completed", count=scored_count)
-    return scored_count
+            await asyncio.sleep(2.0)
+
+    logger.info("microbatch_scoring_completed", count=total_scored)
+    return total_scored
 
 
 async def run_collect_job() -> int:

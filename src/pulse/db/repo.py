@@ -288,7 +288,10 @@ class NewsRepo(BaseRepo):
             return []
 
     def get_scored_24h_news(self) -> list[dict[str, Any]]:
-        """Fetch all scored news items from the floating last 24 hours with pagination."""
+        """Fetch scored news items from the floating last 24 hours with pagination.
+        
+        Only returns items with status 'scored' (already evaluated by LLM).
+        """
         if not self.client:
             return []
         try:
@@ -302,6 +305,7 @@ class NewsRepo(BaseRepo):
                     self.client.table("news_items")
                     .select("*")
                     .gte("collected_at", since_iso)
+                    .eq("status", "scored")
                     .range(offset, offset + page_size - 1)
                     .execute()
                 )
@@ -314,6 +318,34 @@ class NewsRepo(BaseRepo):
         except Exception:
             pass
         return self.get_latest_news(limit=200)
+
+    def get_all_24h_news(self) -> list[dict[str, Any]]:
+        """Fetch ALL news items from the floating last 24 hours (any status) for audit stats."""
+        if not self.client:
+            return []
+        try:
+            from datetime import timedelta
+            since_iso = (datetime.now(timezone.utc) - timedelta(hours=24)).isoformat()
+            all_items: list[dict[str, Any]] = []
+            page_size = 1000
+            offset = 0
+            while True:
+                res = (
+                    self.client.table("news_items")
+                    .select("id,source_id,status")
+                    .gte("collected_at", since_iso)
+                    .range(offset, offset + page_size - 1)
+                    .execute()
+                )
+                items = getattr(res, "data", []) or []
+                all_items.extend(items)
+                if len(items) < page_size:
+                    break
+                offset += page_size
+            return all_items
+        except Exception:
+            pass
+        return []
 
     def update_scored_article(self, article_id: str, update_data: dict[str, Any]) -> None:
         """Update scored article fields in Supabase."""

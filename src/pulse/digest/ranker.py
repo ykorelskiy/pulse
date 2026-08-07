@@ -59,6 +59,21 @@ class TopicRanker:
                     "in_top_10": 0,
                 }
 
+        # Audit stats: count ALL collected items (any status) for accurate reporting
+        all_24h_items = self.news_repo.get_all_24h_news()
+        for item in all_24h_items:
+            sid = str(item.get("source_id") or "news")
+            sname = source_map.get(sid, sid)
+            if sname not in source_stats_map:
+                source_stats_map[sname] = {
+                    "name": sname,
+                    "analyzed": 0,
+                    "in_top_50": 0,
+                    "in_top_10": 0,
+                }
+            source_stats_map[sname]["analyzed"] += 1
+
+        # Ranking: only use scored items (evaluated by LLM)
         raw_items = self.news_repo.get_scored_24h_news()
         if not raw_items:
             raw_items = self.news_repo.get_latest_news(limit=200)
@@ -88,15 +103,6 @@ class TopicRanker:
         for item in raw_items:
             sid = str(item.get("source_id") or "news")
             sname = source_map.get(sid, sid)
-
-            if sname not in source_stats_map:
-                source_stats_map[sname] = {
-                    "name": sname,
-                    "analyzed": 0,
-                    "in_top_50": 0,
-                    "in_top_10": 0,
-                }
-            source_stats_map[sname]["analyzed"] += 1
 
             headline = (item.get("ru_headline") or item.get("headline") or "").strip()
             if not headline or headline.lower() in seen_headlines:
