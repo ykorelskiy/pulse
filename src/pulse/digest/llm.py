@@ -106,31 +106,38 @@ class LLMCurator:
             f"Вот список новостей для оценки:\n{payload_json}"
         )
 
-        models_to_try = ["gemini-2.0-flash", "gemini-2.5-flash", "gemini-1.5-pro"]
+        import time
+        models_to_try = ["gemini-2.0-flash", "gemini-2.5-flash"]
         for model in models_to_try:
-            try:
-                endpoint = (
-                    "https://generativelanguage.googleapis.com/v1beta/models/"
-                    f"{model}:generateContent?key={self.api_key}"
-                )
-                response = httpx.post(
-                    endpoint,
-                    json={
-                        "contents": [{"parts": [{"text": prompt}]}],
-                        "generationConfig": {"response_mime_type": "application/json"},
-                    },
-                    timeout=15.0,
-                )
+            for retry in range(3):
+                try:
+                    endpoint = (
+                        "https://generativelanguage.googleapis.com/v1beta/models/"
+                        f"{model}:generateContent?key={self.api_key}"
+                    )
+                    response = httpx.post(
+                        endpoint,
+                        json={
+                            "contents": [{"parts": [{"text": prompt}]}],
+                            "generationConfig": {"response_mime_type": "application/json"},
+                        },
+                        timeout=20.0,
+                    )
 
-                if response.status_code == 200:
-                    data = response.json()
-                    raw_text = data["candidates"][0]["content"]["parts"][0]["text"]
-                    parsed = json.loads(raw_text)
-                    if isinstance(parsed, list):
-                        logger.info("gemini_batch_scoring_success", model=model, count=len(parsed))
-                        return parsed
-            except Exception as e:
-                logger.warning("gemini_batch_scoring_attempt_failed", model=model, error=str(e))
+                    if response.status_code == 200:
+                        data = response.json()
+                        raw_text = data["candidates"][0]["content"]["parts"][0]["text"]
+                        parsed = json.loads(raw_text)
+                        if isinstance(parsed, list):
+                            logger.info("gemini_batch_scoring_success", model=model, count=len(parsed))
+                            return parsed
+                    elif response.status_code == 429:
+                        logger.warning("gemini_rate_limit_429", model=model, retry=retry)
+                        time.sleep(3.0 * (retry + 1))
+                        continue
+                except Exception as e:
+                    logger.warning("gemini_batch_scoring_attempt_failed", model=model, error=str(e))
+                    time.sleep(1.5)
 
         logger.error("gemini_batch_scoring_failed_using_heuristic")
         return self._heuristic_batch_scoring(items)

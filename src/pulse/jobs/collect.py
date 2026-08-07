@@ -55,6 +55,8 @@ async def process_pending_scoring(repo: NewsRepo, curator: LLMCurator, clusterer
             repo.update_scored_article(item_id, update_data)
             scored_count += 1
 
+        await asyncio.sleep(2.0)
+
     logger.info("microbatch_scoring_completed", count=scored_count)
     return scored_count
 
