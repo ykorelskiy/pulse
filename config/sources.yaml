@@ -109,7 +109,7 @@ sources:
 
   - id: starhit_showbiz
     name: "StarHit — Светская хроника"
-    url: "https://www.starhit.ru/feed/rss/"
+    url: "https://www.starhit.ru/rss/"
     category: "ru_hot"
     weight: 0.30
     enabled: true
@@ -123,7 +123,7 @@ sources:
 
   - id: kp_all
     name: "Комсомольская правда — Происшествия и скандалы"
-    url: "https://www.kp.ru/rss/news.xml"
+    url: "https://www.kp.ru/rss/all.xml"
     category: "ru_hot"
     weight: 0.30
     enabled: true
@@ -131,10 +131,11 @@ sources:
   # Категория Ж: Спорт (10%)
   - id: sports_ru
     name: "Sports.ru — Главные новости спорта"
-    url: "https://www.sports.ru/rss/news.xml"
+    url: "https://www.sports.ru/rss/all_news.xml"
     category: "sports"
     weight: 0.10
     enabled: true
+
 
   - id: championat_com
     name: "Чемпионат — Главное в спорте"
