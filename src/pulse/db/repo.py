@@ -292,11 +292,12 @@ class NewsRepo(BaseRepo):
         if not self.client:
             return []
         try:
-            now_iso = datetime.now(timezone.utc).isoformat()
+            from datetime import timedelta
+            since_iso = (datetime.now(timezone.utc) - timedelta(hours=24)).isoformat()
             res = (
                 self.client.table("news_items")
                 .select("*")
-                .gte("collected_at", now_iso)
+                .gte("collected_at", since_iso)
                 .execute()
             )
             if res and getattr(res, "data", None):
