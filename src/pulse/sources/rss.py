@@ -1,11 +1,27 @@
 """RSS feed source adapter using feedparser."""
 
+import re
 import time
 from datetime import datetime, timezone
+from typing import Any
 
 import feedparser
 
 from pulse.sources.base import BaseSourceAdapter, NewsArticle
+
+DEFAULT_USER_AGENT = (
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+    "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+)
+
+
+def strip_html(text: Any) -> str:
+    """Remove HTML tags and normalize whitespace."""
+    if not text or not isinstance(text, str):
+        return ""
+    clean = re.sub(r"<[^>]+>", " ", text)
+    return " ".join(clean.split()).strip()
+
 
 
 class RSSSourceAdapter(BaseSourceAdapter):
@@ -24,14 +40,13 @@ class RSSSourceAdapter(BaseSourceAdapter):
         self.name = name or source_id
         self.category = category
 
-
     async def fetch_latest(self) -> list[NewsArticle]:
         """Fetch latest entries from RSS feed.
 
         Returns:
             list[NewsArticle]: Parsed news articles.
         """
-        parsed = feedparser.parse(self.feed_url)
+        parsed = feedparser.parse(self.feed_url, agent=DEFAULT_USER_AGENT)
         articles: list[NewsArticle] = []
 
         for entry in parsed.entries:
@@ -39,6 +54,9 @@ class RSSSourceAdapter(BaseSourceAdapter):
             link = getattr(entry, "link", "").strip()
             if not headline or not link:
                 continue
+
+            summary_raw = getattr(entry, "summary", "") or getattr(entry, "description", "")
+            summary_clean = strip_html(summary_raw)[:300]
 
             published_at = None
             if hasattr(entry, "published_parsed") and entry.published_parsed:
@@ -53,6 +71,7 @@ class RSSSourceAdapter(BaseSourceAdapter):
                     source_id=self.source_id,
                     headline=headline,
                     url=link,
+                    summary=summary_clean,
                     published_at=published_at,
                 )
             )

@@ -12,6 +12,7 @@ class NewsArticle(BaseModel):
     source_id: str
     headline: str
     url: str
+    summary: str = ""
     published_at: datetime | None = None
 
 

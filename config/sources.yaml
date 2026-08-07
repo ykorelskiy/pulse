@@ -1,5 +1,19 @@
 sources:
-  # Категория А: RU — главные ленты (базовый новостной фон, 20%)
+  # Категория А: RU — главные ленты и ТОП-агрегаторы (20%)
+  - id: yandex_news
+    name: "Яндекс Новости — Главное дня"
+    url: "https://news.yandex.ru/index.rss"
+    category: "ru_news"
+    weight: 0.20
+    enabled: true
+
+  - id: rambler_news
+    name: "Рамблер Новости — Главные события"
+    url: "https://news.rambler.ru/rss/head/"
+    category: "ru_news"
+    weight: 0.20
+    enabled: true
+
   - id: rbc_news
     name: "РБК — Главные новости"
     url: "https://rssexport.rbc.ru/rbcnews/news/30/full.rss"
@@ -35,13 +49,6 @@ sources:
     weight: 0.20
     enabled: true
 
-  - id: gazeta_social
-    name: "Газета.Ru — Общество"
-    url: "https://www.gazeta.ru/export/rss/social.xml"
-    category: "ru_news"
-    weight: 0.20
-    enabled: true
-
   - id: tass_news
     name: "ТАСС — Главные новости"
     url: "https://tass.ru/rss/v2.xml"
@@ -56,10 +63,24 @@ sources:
     weight: 0.20
     enabled: true
 
-  # Категория Б: RU — «горячее»/скандальное/таблоид (30%)
+  # Категория Б: RU — «горячее»/скандальное/таблоид/эксклюзивы (30%)
+  - id: mash_news
+    name: "Mash — Эксклюзивы и происшествия"
+    url: "https://mash.ru/rss"
+    category: "ru_hot"
+    weight: 0.30
+    enabled: true
+
   - id: fontanka_news
-    name: "Фонтанка.ру — Главные новости и расследования"
+    name: "Фонтанка.ру — Новости и расследования"
     url: "https://www.fontanka.ru/fontanka.xml"
+    category: "ru_hot"
+    weight: 0.30
+    enabled: true
+
+  - id: fontanka_rss
+    name: "Фонтанка.ру — Лента"
+    url: "https://www.fontanka.ru/rss.xml"
     category: "ru_hot"
     weight: 0.30
     enabled: true
@@ -104,6 +125,35 @@ sources:
     url: "https://www.kp.ru/rss/all.xml"
     category: "ru_hot"
     weight: 0.30
+    enabled: true
+
+  # Категория Ж: Спорт (10%)
+  - id: sports_ru
+    name: "Sports.ru — Главные новости спорта"
+    url: "https://www.sports.ru/rss/all.xml"
+    category: "sports"
+    weight: 0.10
+    enabled: true
+
+  - id: championat_com
+    name: "Чемпионат — Главное в спорте"
+    url: "https://www.championat.com/xml/rss.xml"
+    category: "sports"
+    weight: 0.10
+    enabled: true
+
+  - id: match_tv
+    name: "Матч ТВ — Новости спорта"
+    url: "https://matchtv.ru/rss"
+    category: "sports"
+    weight: 0.10
+    enabled: true
+
+  - id: rbc_sport
+    name: "РБК Спорт"
+    url: "https://rssexport.rbc.ru/rbcnews/sport/30/full.rss"
+    category: "sports"
+    weight: 0.10
     enabled: true
 
   # Категория В: Международные скандалы/таблоиды (15%)

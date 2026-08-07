@@ -1,4 +1,4 @@
-"""News and words ranker grouped by 6 sources categories with Gemini LLM Curation."""
+"""News and words ranker grouped by sources categories with Gemini LLM Curation."""
 
 import contextlib
 from collections import Counter
@@ -8,22 +8,32 @@ from pulse.db.repo import NewsRepo, WordsRepo
 from pulse.digest.llm import LLMCurator
 from pulse.sources.registry import SourceRegistry
 
+
+def extract_key_phrase(headline: str) -> str:
+    """Extract key phrase from headline."""
+    if not headline:
+        return ""
+    words = headline.strip().split()
+    return " ".join(words[:6])
+
+
 CATEGORIES_INFO = [
+
     {
         "code": "ru_hot",
-        "title": "Б. RU скандалы / таблоид",
+        "title": "Б. RU скандалы / таблоид / эксклюзивы",
         "weight": "30%",
         "icon": "🔥",
     },
     {
         "code": "ru_news",
-        "title": "А. RU общий новостной фон",
+        "title": "А. RU общий новостной фон (ТОП-агрегаторы)",
         "weight": "20%",
         "icon": "📰",
     },
     {
         "code": "viral_trends",
-        "title": "Д. Сигнал вирусности (Google Trends)",
+        "title": "Д. Сигнал вирусности (Google Trends & Reddit)",
         "weight": "20%",
         "icon": "⚡",
     },
@@ -40,6 +50,12 @@ CATEGORIES_INFO = [
         "icon": "🏛",
     },
     {
+        "code": "sports",
+        "title": "Ж. Новости спорта",
+        "weight": "10%",
+        "icon": "⚽",
+    },
+    {
         "code": "tech",
         "title": "Е. Технологии / наука",
         "weight": "5%",
@@ -53,173 +69,86 @@ CATEGORY_FALLBACKS: dict[str, list[dict[str, str]]] = {
             "headline": "Звёзды эстрады оказались в центре громкого обсуждения",
             "source_name": "StarHit",
             "url": "https://www.starhit.ru",
+            "summary": "На съёмках телешоу произошёл громкий инцидент с участием звёзд.",
         },
         {
-            "headline": "Известный артист прокомментировал резонансный инцидент",
-            "source_name": "7Дней.ру",
-            "url": "https://7days.ru",
+            "headline": "В центре Петербурга открыли новое резонансное расследование",
+            "source_name": "Фонтанка.ру",
+            "url": "https://www.fontanka.ru",
+            "summary": "Журналисты раскрыли подробности скандального дела.",
         },
         {
-            "headline": "В центре столицы произошло громкое происшествие",
-            "source_name": "Комсомольская правда",
-            "url": "https://www.kp.ru",
-        },
-        {
-            "headline": "Скандал на съёмках нового шоу вызвал бурные споры",
-            "source_name": "StarHit",
-            "url": "https://www.starhit.ru",
-        },
-        {
-            "headline": "Популярный блогер заявил о неожиданном решении",
-            "source_name": "7Дней.ру",
-            "url": "https://7days.ru",
+            "headline": "Mash: опубликованы эксклюзивные подробности происшествия",
+            "source_name": "Mash",
+            "url": "https://mash.ru",
+            "summary": "Появились новые данные о резонансном событии дня.",
         },
     ],
     "ru_news": [
         {
-            "headline": "Центробанк опубликовал обновлённый макроэкономический прогноз",
-            "source_name": "РБК",
-            "url": "https://rssexport.rbc.ru",
+            "headline": "Яндекс Новости: главные мировые темы дня в едином обзоре",
+            "source_name": "Яндекс Новости",
+            "url": "https://news.yandex.ru",
+            "summary": "Редакция собрала ключевые события дня.",
         },
         {
-            "headline": "Опубликованы новые подробности межведомственных переговоров",
-            "source_name": "Лента.ру",
-            "url": "https://lenta.ru",
+            "headline": "Рамблер: топ-события и ключевые заявления",
+            "source_name": "Рамблер Новости",
+            "url": "https://news.rambler.ru",
+            "summary": "Обзор наиболее обсуждаемых тем дня.",
+        },
+    ],
+    "sports": [
+        {
+            "headline": "Sports.ru: результат ключевого матча тура вывел команду в лидеры",
+            "source_name": "Sports.ru",
+            "url": "https://www.sports.ru",
+            "summary": "Напряжённая игра завершилась яркой победой на последних минутах.",
         },
         {
-            "headline": "Госдума рассмотрела новый пакет законопроектов",
-            "source_name": "РИА Новости",
-            "url": "https://ria.ru",
-        },
-        {
-            "headline": "Минфин представил отчет о доходах и расходах бюджета",
-            "source_name": "Коммерсантъ",
-            "url": "https://www.kommersant.ru",
-        },
-        {
-            "headline": "ТАСС: утверждены новые региональные инициативы",
-            "source_name": "ТАСС",
-            "url": "https://tass.ru",
+            "headline": "Чемпионат: оглашены составы на предстоящий турнир",
+            "source_name": "Чемпионат",
+            "url": "https://www.championat.com",
+            "summary": "Тренерский штаб назвал главных кандидатов на победу.",
         },
     ],
     "viral_trends": [
         {
-            "headline": "Резкий скачок поисковых запросов в трендах дня",
-            "source_name": "Google Trends RU",
-            "url": "https://trends.google.com",
-        },
-        {
-            "headline": "Обсуждаемая публикация на r/nottheonion набрала тысячи откликов",
-            "source_name": "Reddit",
+            "headline": "Политик случайно подключился к совещанию из ванной комнаты",
+            "source_name": "Reddit r/nottheonion",
             "url": "https://www.reddit.com/r/nottheonion/",
-        },
-        {
-            "headline": "Вирусный мемориальный тренд охватил соцсети",
-            "source_name": "Google Trends RU",
-            "url": "https://trends.google.com",
-        },
-        {
-            "headline": "Абсурдная новость дня стала лидером обсуждений в сети",
-            "source_name": "Reddit",
-            "url": "https://www.reddit.com",
-        },
-        {
-            "headline": "Пользователи массово ищут подробности необычного явления",
-            "source_name": "Google Trends RU",
-            "url": "https://trends.google.com",
+            "summary": "Во время прямой трансляции курьёзный случай вызвал смех участников.",
         },
     ],
     "world_tabloid": [
         {
-            "headline": "Голливудская звезда замечена на закрытой вечеринке",
+            "headline": "Голливудская звезда прокомментировала слухи об отмене тура",
             "source_name": "TMZ",
             "url": "https://www.tmz.com",
-        },
-        {
-            "headline": "Эксклюзивные подробности личной жизни знаменитостей",
-            "source_name": "Page Six",
-            "url": "https://pagesix.com",
-        },
-        {
-            "headline": "Громкое расставание пары из шоу-бизнеса потрясло фанатов",
-            "source_name": "The Hollywood Gossip",
-            "url": "https://feeds.thehollywoodgossip.com",
-        },
-        {
-            "headline": "Неожиданное заявление продюсера об очередном скандале",
-            "source_name": "TMZ",
-            "url": "https://www.tmz.com",
-        },
-        {
-            "headline": "Светский выходы и модные конфузы недели",
-            "source_name": "Page Six",
-            "url": "https://pagesix.com",
+            "summary": "В интервью артист раскрыл неожиданные причины перерыва.",
         },
     ],
     "world_politics": [
         {
-            "headline": "BBC: Состоялся очередной раунд международных консультаций",
-            "source_name": "BBC News World",
-            "url": "https://www.bbc.com/news/world",
-        },
-        {
-            "headline": "The Guardian: Саммит глав государств завершился итоговым коммюнике",
-            "source_name": "The Guardian",
-            "url": "https://www.theguardian.com/world",
-        },
-        {
-            "headline": "Международная комиссия опубликовала ежегодный доклады",
-            "source_name": "BBC News World",
-            "url": "https://www.bbc.com/news/world",
-        },
-        {
-            "headline": "Дипломатический демарш вызвал обсуждение в ООН",
-            "source_name": "The Guardian",
-            "url": "https://www.theguardian.com/world",
-        },
-        {
-            "headline": "Лидеры европейских стран выступили с совместным заявлением",
-            "source_name": "BBC News World",
-            "url": "https://www.bbc.com/news/world",
+            "headline": "Лидеры государств завершили переговоры по ключевым вопросам",
+            "source_name": "BBC World",
+            "url": "https://feeds.bbci.co.uk",
+            "summary": "Итоги Саммита привели к подписанию нового соглашения.",
         },
     ],
     "tech": [
         {
-            "headline": "ИИ впервые создал жизнеспособные биологические конструкции",
+            "headline": "Раскрыты подробности о первом ИИ-гаджете OpenAI от Джони Айва",
             "source_name": "3DNews",
             "url": "https://3dnews.ru",
-        },
-        {
-            "headline": "Хабр: Разработчики анонсировали новый фреймворк для ИИ",
-            "source_name": "Хабр",
-            "url": "https://habr.com",
-        },
-        {
-            "headline": "TechCrunch: Крупная сделка в сфере полупроводников и нейросетей",
-            "source_name": "TechCrunch",
-            "url": "https://techcrunch.com",
-        },
-        {
-            "headline": "Раскрыты подробности о первом персональном гаджете нового поколения",
-            "source_name": "3DNews",
-            "url": "https://3dnews.ru",
-        },
-        {
-            "headline": "Исследователи представили новый квантовый алгоритм",
-            "source_name": "Хабр",
-            "url": "https://habr.com",
+            "summary": "Устройство похоже на пончик и может передвигаться.",
         },
     ],
 }
 
 
-def extract_key_phrase(headline: str) -> str:
-    """Return headline cleanly formatted as a key phrase."""
-    return headline.strip()
-
-
 class TopicRanker:
-    """Ranks RSS news items by category and reader words."""
+    """Ranks and categorizes daily news with Gemini LLM Curation."""
 
     def __init__(
         self,
@@ -236,18 +165,18 @@ class TopicRanker:
         items_per_category: int = 5,
         top_k: int = 10,
     ) -> tuple[list[dict[str, str]], list[dict[str, Any]]]:
-        """Fetch 5 candidates for each of 6 categories (30 items total), then curate via LLM.
+        """Get AI curated Top-10 news list and all categorized candidates.
 
         Returns:
             tuple[list[dict[str, str]], list[dict[str, Any]]]:
-                - Top 10 neural-selected news headlines with translation
-                - All 30 categorized news headlines grouped into 6 category buckets
+                - Top 10 neural-selected news headlines with details and translation
+                - All candidate news headlines grouped into category buckets
         """
         categorized_raw = self.get_categorized_news(items_per_category=items_per_category)
         return self.curator.curate_and_translate_news(categorized_raw, top_k=top_k)
 
     def get_categorized_news(self, items_per_category: int = 5) -> list[dict[str, Any]]:
-        """Extract up to N news items for each of the 6 news categories."""
+        """Extract up to N news items for each news category with summary context."""
         source_map: dict[str, dict[str, str]] = {}
         with contextlib.suppress(Exception):
             registry = SourceRegistry.load_from_config()
@@ -269,6 +198,7 @@ class TopicRanker:
         for art in collected_articles:
             headline = art.get("headline", "").strip()
             url = art.get("url", "#")
+            summary = art.get("summary", "").strip()
             source_id = art.get("source_id", "")
             if not headline or headline.lower() in seen_headlines:
                 continue
@@ -282,6 +212,7 @@ class TopicRanker:
                 seen_headlines.add(headline.lower())
                 categorized_buckets[cat_code].append({
                     "headline": headline,
+                    "summary": summary,
                     "source_name": src_info["name"],
                     "url": url,
                 })

@@ -189,12 +189,14 @@ class NewsRepo(BaseRepo):
         headline: str,
         url: str,
         published_at: str | None = None,
+        summary: str = "",
     ) -> dict[str, Any]:
         data = {
             "source_id": source_id,
             "headline": headline,
             "url": url,
             "published_at": published_at,
+            "summary": summary,
         }
         if not self.client:
             return data
@@ -204,6 +206,7 @@ class NewsRepo(BaseRepo):
             return res.data[0] if res.data else data
         except Exception:
             return data
+
 
 
     def get_latest_news(self, limit: int = 10) -> list[dict[str, Any]]:

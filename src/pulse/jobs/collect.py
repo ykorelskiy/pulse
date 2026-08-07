@@ -43,7 +43,9 @@ async def run_collect_job() -> int:
                         headline=article.headline,
                         url=article.url,
                         published_at=pub_iso,
+                        summary=getattr(article, "summary", ""),
                     )
+
                     new_count += 1
                 except Exception as ex:
                     logger.debug("skip_article", url=article.url, reason=str(ex))

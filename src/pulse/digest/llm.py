@@ -38,7 +38,7 @@ class LLMCurator:
         Returns:
             tuple[list[dict[str, str]], list[dict[str, Any]]]:
                 - Top 10 curated news dicts ('headline', 'source_name', 'url', 'category_title')
-                - All 30 categorized news dicts with translated Russian headlines
+                - All categorized news dicts with translated Russian headlines
         """
         all_candidates: list[dict[str, str]] = []
         for cat in categorized_news:
@@ -47,6 +47,7 @@ class LLMCurator:
                 all_candidates.append({
                     "original_headline": item.get("headline", ""),
                     "headline": item.get("headline", ""),
+                    "summary": item.get("summary", ""),
                     "source_name": item.get("source_name", "новости"),
                     "url": item.get("url", "#"),
                     "category_title": cat_title,
@@ -62,6 +63,7 @@ class LLMCurator:
                 items_payload.append({
                     "id": idx,
                     "headline": cand["headline"],
+                    "summary_snippet": cand["summary"],
                     "source": cand["source_name"],
                     "category": cand["category_title"],
                 })
@@ -69,26 +71,28 @@ class LLMCurator:
             payload_json = json.dumps(items_payload, ensure_ascii=False, indent=2)
             prompt = (
                 "Ты — шеф-редактор и ИИ-куратор сатирического Telegram-канала «Пульс дня».\n"
-                "Перед тобой 30 новостей дня из 6 категорий.\n\n"
-                "Твои задачи:\n"
-                "1. **100% Перевод**: Переведи абсолютно все англоязычные заголовки "
-                "на выразительный, естественный русский язык без англицизмов.\n"
-                "2. **Строгая фильтрация (ЗАПРЕЩЕНО выбирать в ТОП-10)**:\n"
+                "Перед тобой пул свежих новостей дня из разных источников.\n\n"
+                "Твои ключевые задачи:\n"
+                "1. **100% Перевод и Обогащение конкретикой**:\n"
+                "   - Переведи ВСЕ англоязычные заголовки на красивый русский язык.\n"
+                "   - Если заголовок слишком абстрактен (например: «Скандал на съемках»), "
+                "используй данные из 'summary_snippet', чтобы раскрыть КОНКРЕТИКУ (кто, где, "
+                "что именно сделал), создав 1 сочную емкую строку для автора плаката.\n"
+                "2. **Строгий стоп-фильтр (ЗАПРЕЩЕНО в ТОП-10)**:\n"
                 "   - Скучные рецензии на фильмы, сериалы, спектакли и мюзиклы.\n"
                 "   - Корпоративную рекламу, скидки на билеты, анонсы пылесосов и корпуса.\n"
-                "   - Сухие канцелярские отчеты министерств и ведомств.\n"
-                "3. **Многокритериальная оценка ТОП-10**:\n"
-                "   Оцени каждую новость по 4 критериям (виральность/абсурд, резонанс, "
-                "интрига, визуальный потенциал для сатиры) и выбери 10 САМЫХ ярких, "
-                "смешных, ошеломляющих и резонансных сюжетов для русскоязычного читателя "
-                "(например: «ИИ-гаджет OpenAI похож на пончик», «Политик подключился "
-                "к заседанию из ванной» и т.д.).\n\n"
-                "Верни JSON ровно в таком формате:\n"
+                "   - Сухие канцелярские отчеты ведомств и министерств.\n"
+                "3. **Свободный выбор ТОП-10 (БЕЗ категорийных квот)**:\n"
+                "   Оцени все новости по виральности, курьёзности, интриге и сатирическому "
+                "потенциалу. Выбери 10 САМЫХ ярких новостей со ВСЕГО списка вне зависимости "
+                "от категорий.\n\n"
+                "Верни JSON в таком формате:\n"
                 "{\n"
-                '  "translated_all": [ {"id": 1, "ru_headline": "Заголовок на русском"}, ...],\n'
+                '  "translated_all": [ {"id": 1, "ru_headline": "Заголовок"}, ...],\n'
+
                 '  "top_10_ids": [1, 5, 8, 12, ...]\n'
                 "}\n\n"
-                f"Вот список 30 новостей:\n{payload_json}"
+                f"Вот список новостей:\n{payload_json}"
             )
 
             endpoint = (
@@ -197,13 +201,50 @@ class LLMCurator:
             "Today’s the last day to get up to $400 off": (
                 "Сегодня последний день скидки на билеты TechCrunch Disrupt"
             ),
+            "Julia Roberts has a": (
+                "Джулия Робертс появилась в платье в горошек на свадьбе племянницы"
+            ),
+            "Believe it: Le Labo is on sale": (
+                "Парфюмерный брендовый набор поступил в продажу со скидкой $60"
+            ),
+            "Where Antonio Banderas and Melanie Griffith": (
+                "Как складываются отношения Антонио Бандераса и Мелани Гриффит после развода"
+            ),
+            "Conor McGregor Gives Update": (
+                "Конор Макгрегор объявил о завершении операции на колене и возвращении"
+            ),
+            "Earth, Wind & Fire Drumмер": (
+                "Барабанщик легендарной группы госпитализирован после экстренного вызова"
+            ),
+            "Cambridge academics reject": (
+                "Учёные Кембриджа отклонили попытку университета урегулировать споры"
+            ),
+            "Spanish police arrest 78": (
+                "Полиция Испании задержала 78 членов крупной сети контрабандистов"
+            ),
+            "Electric fans brought in": (
+                "Электрические вентиляторы привезли сушить просевшее шоссе в Индии"
+            ),
+            "CAUGHT ON CAMERA": (
+                "Дилерский центр снял запчасти с машины клиентки для чужого ремонта"
+            ),
+            "Giant mirrors in space": (
+                "Проект гигантских зеркал в космосе для освещения Земли вызвал споры"
+            ),
+            "Anthropic CEO reportedly worried": (
+                "Глава Anthropic обеспокоен погоней сотрудников за деньгами"
+            ),
+            "Computer maker Framework notifies": (
+                "Производитель ноутбуков Framework предупредил клиентов об утечке данных"
+            ),
+            "Cloudflare launches Kitesurf": (
+                "Cloudflare запустила браузер Kitesurf для ИИ-агентов"
+            ),
         }
 
-        # Priority score calculation for fallback selection
         scored_candidates = []
         for cand in all_candidates:
             h = cand["headline"]
-            # Perform fallback translation
             for en_key, ru_val in translations_dict.items():
                 if en_key.lower() in h.lower():
                     h = ru_val
@@ -211,19 +252,17 @@ class LLMCurator:
                     break
 
             score = 50
-            # Penalize boring review / discount words
             if any(bad in h.lower() for bad in ["рецензия", "мюзикл", "пылесос", "корпус"]):
                 score -= 40
-            # Boost viral / funny / tech / scandal words
             if any(good in h.lower() for good in [
                 "ванн", "пончик", "кенгуру", "скандал", "ии-гаджет",
-                "суд", "рэп", "политик", "дразн", "вирус"
+                "суд", "рэп", "политик", "дразн", "вирус", "спорт",
+                "матч", "курорт", "рыб"
             ]):
                 score += 30
 
             scored_candidates.append((score, cand))
 
-        # Sort by score descending
         scored_candidates.sort(key=lambda x: x[0], reverse=True)
 
         top_10_list = [
@@ -236,7 +275,6 @@ class LLMCurator:
             for _, cand in scored_candidates[:top_k]
         ]
 
-        # Update categorized_news with translated headlines
         cand_map = {c["original_headline"]: c["headline"] for c in all_candidates}
         for cat in categorized_news:
             for item in cat.get("items", []):
