@@ -1,0 +1,80 @@
+briefs:
+  - id: 1
+    slug: technosatire
+    title: "Техно-сатира"
+    purpose: "ядровой сценарий канала"
+    characters: [cat]
+    scene: >
+      A busy satirical server room and AI control center filled with vintage retro-futuristic computing machinery, glowing vacuum tubes, complex dials, and paper printouts overflowing onto the floor. In the centre, an overly complex mechanical computer terminal is spitting out decision tape. Perplexed engineers in Soviet-era coats hold blueprints. The tin mascot PULSE stands near the main console holding a large wrench. Near a coffee mug in the lower corner sits the striped CAT looking on ironically.
+    text:
+      banner: "НЕЙРОСЕТЬ ВСЁ РЕШИЛА"
+      sign_1: "ОШИБСЯ? НЕ ПОМЕХА!"
+      sign_2: "СОГЛАСОВАНО. КЕМ - НЕЯСНО"
+      chalkboard: "ПЛАН:\n1. ДУМАТЬ\n2. НЕ НАДО"
+      bubble: "Я ЭТО НЕ ПОДПИСЫВАЛ"
+      tag: "ПОЧТИ ТОЧНО"
+      footer: "ЧЕЛОВЕК ЕЩЁ НУЖЕН. НАВЕРНОЕ."
+
+  - id: 2
+    slug: news_allegory
+    title: "Новостная аллегория"
+    purpose: "аллегория на новостную повестку"
+    characters: [seagull]
+    scene: >
+      A satirical newsroom and weather station built atop a wooden telegraph tower. Meteorological balloons, paper windmills, horn loudspeakers, and endless stacks of printed newspapers fill the scene. An oversized brass weather vane points in three directions simultaneously. The tin mascot PULSE stands on a balcony holding a telescope turned backwards. A brazen SEAGULL perches atop a wooden signpost shouting through a tiny megaphone.
+    text:
+      banner: "НОВОСТИ ДНЯ: ВСЁ СТАБИЛЬНО"
+      sign_1: "СЛУХИ? НЕ ПОМЕХА!"
+      sign_2: "ПРОГНОЗ: 100% ВЕРОЯТНОСТЬ"
+      checklist_board: "СВОДКА:\nv ВЕТЕР МЕНЯЕТСЯ\nv ИСТОЧНИК НАДЁЖЕН\nv ДАННЫЕ УТОЧНЯЮТСЯ"
+      bubble: "Я ЖЕ ГОВОРИЛ!"
+      tag: "СРОЧНО В НОМЕР"
+      footer: "ШУМА МНОГО, ТОЛКУ МАЛО.\nНО ИНТЕРЕСНО!"
+
+  - id: 3
+    slug: prof_holiday
+    title: "Профпраздник"
+    purpose: "поздравление с профессиональным праздником"
+    characters: [cat, dog]
+    scene: >
+      A grand shipyard and industrial harbor construction site celebrating professional shipbuilders and marine engineers. Massive steel ship hull under scaffolding, giant cranes against the blue sky, wooden crates, anchors, chains, and drafting boards. Industrial workers and sailors in uniform celebrating around a wooden workbench. The tin mascot PULSE stands proudly near a blueprint table holding a brass compass. The striped CAT sits on a dock bollard next to a coffee mug, while the naive DOG sits nearby wearing a tiny paper sailor cap looking up in awe.
+    text:
+      banner: "С ДНЁМ КОРАБЛЕСТРОИТЕЛЯ!"
+      sign_1: "СРОКИ ГОРЯТ? НЕ ПОМЕХА!"
+      sign_2: "ЧЕРТЕЖИ ПЛАВАЮТ? НЕ ПОМЕХА!"
+      checklist_board: "ПРОВЕРЕНО:\nv НЕ УТОНЕТ\nv НЕ РАЗВАЛИТСЯ\nv НЕ СТЫДНО"
+      bubble: "СДАДИМ. И ПОЙДЁТ!"
+      tag: "ВОЕННАЯ ПРИЁМКА"
+      footer: "КОРАБЛИ ХОДЯТ, А ПЛАВАЕТ ТОЛЬКО...\nНАС НЕ ОСТАНОВИТЬ!"
+
+  - id: 4
+    slug: birthday
+    title: "День рождения"
+    purpose: "персональное ироничное поздравление"
+    characters: [cat, dog]
+    scene: >
+      A cozy, humorous birthday setup at home with a huge chalkboard of daily tasks, a massive coffee mug, dumb-bells, champagne bottles, cold medicine boxes, and bumblebees hovering near a flower pot. A cheerful blonde woman in glasses sits on the floor wearing heart-pattern pajamas and bunny slippers, surrounded by ironic celebration props. The tin mascot PULSE stands beside the chalkboard holding a tiny party horn. The CAT and DOG sit together near the slippers eyeing the champagne glass.
+    text:
+      banner: "С ДНЁМ РОЖДЕНИЯ, НАТАША!"
+      sign_1: "46 - ЭТО НЕ ВОЗРАСТ!"
+      sign_2: "ЭТО УРОВЕНЬ!"
+      chalkboard: "ПЛАН НА ДЕНЬ:\nv ПРИСЕДАНИЯ\nv ШАМПАНСКОЕ\nv НУРОФЕН"
+      bubble: "СЕГОДНЯ МОЖНО ВСЁ!"
+      tag: "МОИ ПРАВИЛА"
+      footer: "БУДЬ ЗДОРОВА И СЧАСТЛИВА!\nПУСТЬ ВСЁ БУДЕТ КАК ХОЧЕШЬ!"
+
+  - id: 5
+    slug: absurd_domestic
+    title: "Бытовой абсурд"
+    purpose: "стресс-тест плотности"
+    characters: [cat, seagull, inspector]
+    scene: >
+      An absurd administrative inspection scene inside a chaotic apartment kitchen and workshop. A giant wooden table is crammed with mismatched appliances, tea kettles, rubber stamps, stack of permits, measuring instruments, and hanging tags. The fictional INSPECTOR in a peaked cap holds an oversized magnifying glass and rubber stamp, solemnly inspecting a boiling kettle. The tin mascot PULSE stands on a stool holding an official clipboard. The CAT is perched on a shelf next to a tea tin, while the SEAGULL perches on top of the inspector's cap shouting advice.
+    text:
+      banner: "ПРОВЕРКА БЫТОВОГО АБСУРДА"
+      sign_1: "НЕТ НОРМ? НЕ ПОМЕХА!"
+      sign_2: "ШТАМП ПРИЖАТ ЖЁСТКО"
+      checklist_board: "АКТ ОСМОТРА:\nv ЧАЙНИК КИПИТ\nv КАТЕГОРИЯ ВЫСОКАЯ\nv ПЕЧАТЬ СТОИТ"
+      bubble: "ВСЁ ПО ИНСТРУКЦИИ!"
+      tag: "ПРОВЕРЕНО"
+      footer: "АБСУРД ПО ГОСТУ —\nЗАЛОГ СТАБИЛЬНОСТИ."

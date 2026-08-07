@@ -1,0 +1,45 @@
+STYLE (must be preserved exactly, this is a recurring series
+by one illustrator):
+Dense hand-painted illustrated poster, gouache and watercolor
+on aged warm cream paper with visible paper grain and slightly
+darkened edges. Thin dark-brown ink contour of varying weight.
+Characters drawn in the tradition of 1970s-80s Soviet hand-drawn
+animation: big noses, expressive brows, lively readable poses.
+Machinery, tools and objects rendered detailed and believable —
+the deliberate contrast between cartoon characters and serious
+technical accuracy is essential.
+Palette: parchment cream base, terracotta, ochre, warm brown,
+muted red accents, naval blue and grey-blue. Warm soft light.
+Composition: banner headline across the top, main scene in the
+centre, a vertical stack of wooden signboards along one side,
+small side-gags and animal commentators in the corners,
+a moral line at the bottom.
+Highly detailed, many small readable props with tags and labels,
+rewarding close inspection.
+NEGATIVE: photorealism, 3D render, glossy CGI, flat vector
+infographic style, neon colours, pure white background,
+empty sterile background, Latin letters, invented glyphs,
+recognisable real politicians.
+
+RECURRING MASCOT:
+RECURRING MASCOT "ПУЛЬС": a small tin robot, lamp-head glowing warm, brass rivets, a pulse dial on his chest. Present in every image, always holding something.
+
+
+SUPPORTING CHARACTERS:
+- Чайка (глас народа): a brazen seagull stating the obvious loudly
+
+SCENE:
+A satirical newsroom and weather station built atop a wooden telegraph tower. Meteorological balloons, paper windmills, horn loudspeakers, and endless stacks of printed newspapers fill the scene. An oversized brass weather vane points in three directions simultaneously. The tin mascot PULSE stands on a balcony holding a telescope turned backwards. A brazen SEAGULL perches atop a wooden signpost shouting through a tiny megaphone.
+
+Render the following Cyrillic text elements EXACTLY in clear Russian lettering:
+- BANNER: "НОВОСТИ ДНЯ: ВСЁ СТАБИЛЬНО"
+- SIGN_1: "СЛУХИ? НЕ ПОМЕХА!"
+- SIGN_2: "ПРОГНОЗ: 100% ВЕРОЯТНОСТЬ"
+- CHECKLIST_BOARD: "СВОДКА:
+v ВЕТЕР МЕНЯЕТСЯ
+v ИСТОЧНИК НАДЁЖЕН
+v ДАННЫЕ УТОЧНЯЮТСЯ"
+- BUBBLE: "Я ЖЕ ГОВОРИЛ!"
+- TAG: "СРОЧНО В НОМЕР"
+- FOOTER: "ШУМА МНОГО, ТОЛКУ МАЛО.
+НО ИНТЕРЕСНО!"

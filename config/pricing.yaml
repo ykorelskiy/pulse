@@ -1,0 +1,18 @@
+pricing:
+  currency: "RUB"
+  tiers:
+    - id: "personal"
+      name: "Персональный открытка-плакат"
+      price: 5000.00
+      resolution: "2K"
+      delivery_days: 2
+    - id: "pro_holiday"
+      name: "Постер на профессиональный праздник"
+      price: 15000.00
+      resolution: "4K"
+      delivery_days: 3
+    - id: "corporate"
+      name: "Корпоративный плакат компаний"
+      price: 45000.00
+      resolution: "4K_PLUS"
+      delivery_days: 5

@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  pulse-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: pulse-app
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - PULSE_ENV=production
+    volumes:
+      - ./config:/app/config:ro
+    healthcheck:
+      test: ["CMD", "python", "-m", "pulse.config", "--check"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s

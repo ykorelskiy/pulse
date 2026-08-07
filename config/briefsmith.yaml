@@ -1,0 +1,4 @@
+briefsmith:
+  max_top_words: 5
+  max_top_news: 3
+  template_style: "assisted_author_brief"

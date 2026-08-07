@@ -1,0 +1,47 @@
+criteria:
+- key: c1_technique
+  title: Техника
+  question: Похоже на гуашь/акварель по старой бумаге, не CG
+  group: style
+- key: c2_palette
+  title: Палитра
+  question: Тёплая пергаментная база, терракота, охра, синий
+  group: style
+- key: c3_line
+  title: Линия и персонажи
+  question: Тонкий контур, пластика советской анимации 70-80х
+  group: style
+- key: c4_composition
+  title: Композиция
+  question: Баннер сверху, центр, колонка табличек, периферия
+  group: style
+- key: c5_density
+  title: Плотность деталей
+  question: Много мелких подписанных предметов и деталей
+  group: style
+- key: c6_cyrillic
+  title: Кириллица
+  question: Все надписи читаемы, без латиницы и выдуманных букв
+  group: text
+- key: c7_checklist
+  title: Обязательные элементы
+  question: Выполнен чек-лист обязательных элементов
+  group: checklist
+- key: c8_tone
+  title: Тон
+  question: Тёплая ирония, не злая карикатура
+  group: style
+scoring:
+  style_score:
+    aggregate: mean
+    of:
+    - c1_technique
+    - c2_palette
+    - c3_line
+    - c4_composition
+    - c5_density
+    - c8_tone
+  thresholds:
+    style_score_min: 7.5
+    text_match_min: 0.8
+    pass_ratio_required: 0.8

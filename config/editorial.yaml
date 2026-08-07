@@ -1,0 +1,10 @@
+editorial:
+  tone: "warm_irony"
+  forbidden_topics:
+    - "real_politicians_faces"
+    - "violence_and_gore"
+    - "hate_speech"
+  allegory_rules:
+    - "Use metaphorical characters instead of real public figures"
+    - "Satirize situations and phenomena, not individuals"
+    - "Always include the tin robot mascot PULSE"

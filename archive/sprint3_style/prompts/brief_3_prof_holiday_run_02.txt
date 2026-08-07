@@ -1,0 +1,46 @@
+STYLE (must be preserved exactly, this is a recurring series
+by one illustrator):
+Dense hand-painted illustrated poster, gouache and watercolor
+on aged warm cream paper with visible paper grain and slightly
+darkened edges. Thin dark-brown ink contour of varying weight.
+Characters drawn in the tradition of 1970s-80s Soviet hand-drawn
+animation: big noses, expressive brows, lively readable poses.
+Machinery, tools and objects rendered detailed and believable —
+the deliberate contrast between cartoon characters and serious
+technical accuracy is essential.
+Palette: parchment cream base, terracotta, ochre, warm brown,
+muted red accents, naval blue and grey-blue. Warm soft light.
+Composition: banner headline across the top, main scene in the
+centre, a vertical stack of wooden signboards along one side,
+small side-gags and animal commentators in the corners,
+a moral line at the bottom.
+Highly detailed, many small readable props with tags and labels,
+rewarding close inspection.
+NEGATIVE: photorealism, 3D render, glossy CGI, flat vector
+infographic style, neon colours, pure white background,
+empty sterile background, Latin letters, invented glyphs,
+recognisable real politicians.
+
+RECURRING MASCOT:
+RECURRING MASCOT "ПУЛЬС": a small tin robot, lamp-head glowing warm, brass rivets, a pulse dial on his chest. Present in every image, always holding something.
+
+
+SUPPORTING CHARACTERS:
+- Кот (циничный комментатор): a striped cat, always near a mug, ironic short remarks
+- Пёс (наивный энтузиаст): a trusting dog who believes every signboard
+
+SCENE:
+A grand shipyard and industrial harbor construction site celebrating professional shipbuilders and marine engineers. Massive steel ship hull under scaffolding, giant cranes against the blue sky, wooden crates, anchors, chains, and drafting boards. Industrial workers and sailors in uniform celebrating around a wooden workbench. The tin mascot PULSE stands proudly near a blueprint table holding a brass compass. The striped CAT sits on a dock bollard next to a coffee mug, while the naive DOG sits nearby wearing a tiny paper sailor cap looking up in awe.
+
+Render the following Cyrillic text elements EXACTLY in clear Russian lettering:
+- BANNER: "С ДНЁМ КОРАБЛЕСТРОИТЕЛЯ!"
+- SIGN_1: "СРОКИ ГОРЯТ? НЕ ПОМЕХА!"
+- SIGN_2: "ЧЕРТЕЖИ ПЛАВАЮТ? НЕ ПОМЕХА!"
+- CHECKLIST_BOARD: "ПРОВЕРЕНО:
+v НЕ УТОНЕТ
+v НЕ РАЗВАЛИТСЯ
+v НЕ СТЫДНО"
+- BUBBLE: "СДАДИМ. И ПОЙДЁТ!"
+- TAG: "ВОЕННАЯ ПРИЁМКА"
+- FOOTER: "КОРАБЛИ ХОДЯТ, А ПЛАВАЕТ ТОЛЬКО...
+НАС НЕ ОСТАНОВИТЬ!"

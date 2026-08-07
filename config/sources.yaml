@@ -1,0 +1,18 @@
+sources:
+  - id: rbc_news
+    name: "РБК Главные новости"
+    url: "https://rssexport.rbc.ru/rbcnews/news/30/full.rss"
+    category: "general"
+    enabled: true
+
+  - id: ria_tech
+    name: "РИА Новости Наука и Технологии"
+    url: "https://ria.ru/export/rss2/archive/index.xml"
+    category: "tech"
+    enabled: true
+
+  - id: habr_top
+    name: "Хабр — Лучшее за сутки"
+    url: "https://habr.com/ru/rss/best/daily/?fl=ru"
+    category: "it"
+    enabled: true

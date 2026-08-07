@@ -1,0 +1,22 @@
+name: Daily Author Brief Job
+
+on:
+  schedule:
+    - cron: '0 15 * * *' # 18:00 MSK (15:00 UTC)
+  workflow_dispatch:
+
+jobs:
+  daily-brief:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install .
+      - run: python -m pulse.jobs.daily
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          ADMIN_CHAT_ID: ${{ secrets.ADMIN_CHAT_ID }}

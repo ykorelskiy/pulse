@@ -1,0 +1,32 @@
+mascot:
+  id: pulse
+  name_ru: ПУЛЬС
+  always_present: true
+  prompt_fragment: 'RECURRING MASCOT "ПУЛЬС": a small tin robot, lamp-head glowing
+    warm, brass rivets, a pulse dial on his chest. Present in every image, always
+    holding something.
+
+    '
+supporting:
+- id: cat
+  name_ru: Кот
+  role: циничный комментатор
+  prompt_fragment: a striped cat, always near a mug, ironic short remarks
+- id: seagull
+  name_ru: Чайка
+  role: глас народа
+  prompt_fragment: a brazen seagull stating the obvious loudly
+- id: dog
+  name_ru: Пёс
+  role: наивный энтузиаст
+  prompt_fragment: a trusting dog who believes every signboard
+- id: inspector
+  name_ru: Инспектор
+  role: бюрократ-абсурдист
+  prompt_fragment: 'a fictional inspector in a peaked cap with a folder and a rubber
+    stamp, inspecting something pointless. NOT a real person.
+
+    '
+rules:
+  mascot_in_every_image: true
+  max_supporting_per_image: 2

@@ -1,0 +1,3 @@
+text_budget:
+  max_blocks: 7
+  max_words_per_block: 5

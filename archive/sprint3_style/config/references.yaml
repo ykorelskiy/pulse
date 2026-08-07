@@ -1,0 +1,8 @@
+references:
+  - path: assets/references/ref_natasha.jpg
+    note: персональный плакат, эталон палитры и подачи персонажа
+  - path: assets/references/ref_shipbuilder.jpg
+    note: профпраздник, эталон детализации техники
+  - path: assets/references/ref_navy.jpg
+    note: профпраздник, эталон композиции и колонки табличек
+max_active: 6

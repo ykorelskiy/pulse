@@ -1,0 +1,15 @@
+required_elements:
+- key: banner
+  desc: баннер-заголовок сверху на кириллице
+- key: signboards
+  desc: минимум 2 таблички/указателя с надписями
+- key: checklist_board
+  desc: минимум 1 чек-лист с галочками
+- key: animal_commentator
+  desc: минимум 1 животное-комментатор с репликой
+- key: easter_eggs
+  desc: 2-3 пасхалки по краям с бирками
+- key: footer_moral
+  desc: строка-мораль в подвале
+- key: paper_texture
+  desc: фактура состаренной бумаги, тёплый свет

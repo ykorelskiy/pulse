@@ -1,0 +1,20 @@
+name: Calculate Winner Job
+
+on:
+  schedule:
+    - cron: '50 20 * * *' # 23:50 MSK (20:50 UTC)
+  workflow_dispatch:
+
+jobs:
+  winner:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install .
+      - run: python -m pulse.jobs.winner
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
