@@ -131,6 +131,29 @@ export const MonthGrid: React.FC<MonthGridProps> = ({
                 }
               }}
             >
+              {/* Red handwritten crayon circle overlay for selected/today */}
+              {isSelected && (
+                <svg className="handwritten-circle-svg" viewBox="0 0 100 100" preserveAspectRatio="none">
+                  <path
+                    d="M 15 50 C 12 25, 30 10, 55 12 C 80 14, 92 32, 88 58 C 84 82, 60 92, 35 88 C 15 84, 8 62, 20 45"
+                    fill="none"
+                    stroke="#dc2626"
+                    strokeWidth="4.5"
+                    strokeLinecap="round"
+                    strokeDasharray="120"
+                    className="crayon-stroke-path"
+                  />
+                </svg>
+              )}
+
+              {/* Hand-drawn graphite pencil cross for empty past dates */}
+              {cell.state === "empty_past" && (
+                <svg className="pencil-cross-svg" viewBox="0 0 40 40">
+                  <line x1="8" y1="8" x2="32" y2="32" stroke="#64748b" strokeWidth="2.5" strokeLinecap="round" opacity="0.6" />
+                  <line x1="32" y1="8" x2="8" y2="32" stroke="#64748b" strokeWidth="2.5" strokeLinecap="round" opacity="0.6" />
+                </svg>
+              )}
+
               {cell.state === "published" && thumbUrl ? (
                 <div className="cell-thumb-wrapper">
                   <img src={thumbUrl} alt={`Превью ${cell.dayNum}`} className="cell-thumb-img" />
@@ -139,7 +162,7 @@ export const MonthGrid: React.FC<MonthGridProps> = ({
               ) : (
                 <div className="cell-content">
                   <span className={`cell-day-num ${redDate ? "red-num" : ""}`}>{cell.dayNum}</span>
-                  {cell.state === "pending_today" && <span className="badge-soon">скоро</span>}
+                  {cell.state === "pending_today" && <span className="badge-soon">скоро...</span>}
                 </div>
               )}
             </div>
