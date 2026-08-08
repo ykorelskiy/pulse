@@ -42,8 +42,12 @@ def is_admin(user: types.User | None) -> bool:
     if not user:
         return False
     cfg = get_config().settings
-    if cfg.ADMIN_CHAT_ID and user.id == cfg.ADMIN_CHAT_ID:
-        return True
+    if cfg.ADMIN_CHAT_ID:
+        try:
+            if int(user.id) == int(cfg.ADMIN_CHAT_ID):
+                return True
+        except (ValueError, TypeError):
+            pass
     if user.username and user.username.lower() == "anta9onist":
         save_admin_chat_id(user.id)
         return True
