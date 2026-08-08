@@ -1,7 +1,7 @@
 import asyncio
 from datetime import datetime, timezone
 
-from aiogram import Router, types
+from aiogram import Bot, F, Router, types
 from aiogram.filters import Command
 
 from pulse.briefsmith.builder import BriefBuilder
@@ -130,3 +130,35 @@ async def cmd_force_brief(message: types.Message) -> None:
 
 
     await send_split_message(message, brief_text)
+
+
+@router.message(F.photo)
+async def handle_photo_cover_upload(message: types.Message, bot: Bot) -> None:
+    """Handle photo upload by admin for site cover issue."""
+    if not is_admin(message.from_user):
+        return
+
+    caption = (message.caption or "").strip()
+    target_date = None
+    if caption and len(caption) == 10 and caption[4] == "-" and caption[7] == "-":
+        target_date = caption
+
+    await message.answer("🖼 Принял картинку! Генерирую превью (WebP) и загружаю в хранилище сайта...")
+
+    try:
+        photo = message.photo[-1]
+        file_info = await bot.get_file(photo.file_id)
+        downloaded = await bot.download_file(file_info.file_path)
+        image_bytes = downloaded.read()
+
+        from pulse.publisher.site_publisher import process_and_upload_cover
+        res = process_and_upload_cover(image_bytes, target_date_str=target_date, published=True)
+
+        await message.answer(
+            f"✅ **Выпуск успешно опубликован на сайте!**\n\n"
+            f"📅 **Дата:** `{res['issue_date']}`\n"
+            f"🖼 **Путь:** `{res['cover_path']}`\n"
+            f"📱 **Превью:** `{res['thumb480_path']}`"
+        )
+    except Exception as e:
+        await message.answer(f"❌ Ошибка при публикации картинки: {e}")
