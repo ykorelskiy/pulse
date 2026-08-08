@@ -159,6 +159,10 @@ class WordsRepo(BaseRepo):
 
         return unique_list[:limit]
 
+    def get_active_words(self, limit: int = 5) -> list[dict[str, Any]]:
+        """Alias for get_recent_words."""
+        return self.get_recent_words(limit=limit)
+
 
 class NewsRepo(BaseRepo):
     """Repository for news articles."""

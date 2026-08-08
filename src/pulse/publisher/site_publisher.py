@@ -13,9 +13,32 @@ logger = get_logger("pulse.publisher.site_publisher")
 MSK_TZ = zoneinfo.ZoneInfo("Europe/Moscow")
 
 
+from datetime import datetime, timedelta, timezone
+
 def get_msk_today() -> str:
     """Return today date string in Europe/Moscow timezone (YYYY-MM-DD)."""
     return datetime.now(MSK_TZ).strftime("%Y-%m-%d")
+
+
+def get_active_issue_date() -> str:
+    """Return active target issue date string (YYYY-MM-DD).
+
+    If today's issue is already published, shifts target to tomorrow's date.
+    Otherwise returns today's date.
+    """
+    today_str = get_msk_today()
+    try:
+        client = get_supabase_client()
+        res = client.table("site_issues").select("status,published").eq("issue_date", today_str).execute()
+        rows = res.data or []
+        if rows:
+            row = rows[0]
+            if row.get("status") == "published" or row.get("published") is True:
+                dt = datetime.strptime(today_str, "%Y-%m-%d") + timedelta(days=1)
+                return dt.strftime("%Y-%m-%d")
+    except Exception as e:
+        logger.warning("get_active_issue_date_error", error=str(e))
+    return today_str
 
 
 def resize_and_convert_to_webp(image_bytes: bytes, max_long_edge: int, quality: int = 80) -> bytes:

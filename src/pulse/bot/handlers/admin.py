@@ -88,35 +88,53 @@ async def send_split_message(message: types.Message, text: str) -> None:
             )
 
 
-@router.message(Command("brief"))
-async def cmd_brief(message: types.Message) -> None:
-    """Generate daily brief on demand and send to admin."""
+@router.message(Command("top"))
+async def cmd_top_news(message: types.Message) -> None:
+    """Send top N curated news items with rating scores to admin."""
     if not is_admin(message.from_user):
         return
 
-    await message.answer("🔄 **Формирую бриф и отбор новостей...**")
+    text = (message.text or "").strip()
+    parts = text.split()
+    limit = 15
+    if len(parts) > 1 and parts[1].isdigit():
+        limit = min(max(int(parts[1]), 1), 50)
+
+    target_date = get_active_issue_date()
+    await message.answer(f"📊 **Формирую ТОП-{limit} позитивных новостей (дата выпуска: {target_date})...**")
 
     try:
         ranker = TopicRanker()
-        top_10, top_50, source_stats = ranker.get_top_curated_digest(items_per_category=10, top_k=10)
-        words_repo = WordsRepo()
-        top_words = words_repo.get_active_words(limit=5)
-        word_strings = [w["word"] for w in top_words]
+        _, top_50, _ = ranker.get_top_curated_digest(items_per_category=10, top_k=50)
 
-        builder = BriefBuilder()
-        today_str = get_msk_today()
-        brief_text = builder.build_daily_brief(
-            date_str=today_str,
-            top_10_curated=top_10,
-            top_50_flat=top_50,
-            source_stats=source_stats,
-            top_words=word_strings,
-        )
+        lines = [
+            f"📊 **ТОП-{limit} ПОЗИТИВНЫХ НОВОСТЕЙ ДНЯ ({target_date})**\n",
+            "📌 *Аналитическая подборка с баллами рейтинга:*\n",
+        ]
 
-        await send_split_message(message, brief_text)
+        for idx, item in enumerate(top_50[:limit], 1):
+            raw_title = item.get("headline") or item.get("title") or item.get("text") or ""
+            headline = raw_title.strip()
+            url = item.get("url", "")
+            score = item.get("total_score") or item.get("score") or 0.0
+
+            score_str = f"⭐ **{score:.1f}**" if isinstance(score, (int, float)) and score > 0 else "⭐ **—**"
+
+            if url and headline:
+                lines.append(f"{idx}. {score_str} — [{headline}]({url})")
+            elif headline:
+                lines.append(f"{idx}. {score_str} — {headline}")
+            elif url:
+                lines.append(f"{idx}. {score_str} — [{url}]({url})")
+
+        lines.append("")
+        lines.append("💡 *Увеличить количество: `/top 20` или `/top 30`*")
+
+        full_response = "\n".join(lines)
+        await send_split_message(message, full_response)
     except Exception as e:
-        logger.error("cmd_brief_failed", error=str(e))
-        await message.answer(f"❌ Ошибка при генерации брифа: {e}")
+        logger.error("cmd_top_failed", error=str(e))
+        await message.answer(f"❌ Ошибка при получении ТОП новостей: {e}")
 
 
 @router.message(Command("word"))
@@ -202,7 +220,7 @@ async def cmd_process_photo(message: types.Message) -> None:
 
     caption_text = message.caption or ""
     parts = caption_text.strip().split(maxsplit=1)
-    target_date = get_msk_today()
+    target_date = get_active_issue_date()
     prompt_text = None
 
     if len(parts) > 0 and len(parts[0]) == 10 and parts[0][4] == "-" and parts[0][7] == "-":
@@ -266,7 +284,7 @@ async def cmd_preview_post(message: types.Message) -> None:
         target_date = parts[1]
 
     if not target_date:
-        target_date = get_msk_today()
+        target_date = get_active_issue_date()
 
     from pulse.db.client import get_supabase_client
     client = get_supabase_client()
