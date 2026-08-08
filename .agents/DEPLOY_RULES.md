@@ -108,8 +108,9 @@ pm2 start pulse-bot
 ## 4. Cron-задачи на сервере (`Etc/UTC`)
 
 ```cron
-0 * * * *   — pulse.jobs.intake (Каждый час: сбор новостей, скоринг)
-0 15 * * *  — pulse.jobs.daily (18:00 МСК: авто-рассылка 15 новостей автору)
-30 16 * * * — pulse.jobs.remind_publish (19:30 МСК: авто-напоминание)
-0 17 * * *  — pulse.jobs.auto_publish (20:00 МСК: автопубликация в TG + VK + Сайт)
+30 * * * *  — pulse.jobs.intake fetch (В XX:30 каждого часа: сбор новостей из RSS/TG лент)
+45 * * * *  — pulse.jobs.intake score (В XX:45 каждого часа: нейрооценка Gemini + Watchdog)
+0 15 * * *  — pulse.jobs.daily (18:00 МСК / 15:00 UTC: авто-рассылка 15 новостей автору)
+30 16 * * * — pulse.jobs.remind_publish (19:30 МСК / 16:30 UTC: авто-напоминание)
+0 17 * * *  — pulse.jobs.auto_publish (20:00 МСК / 17:00 UTC: автопубликация в TG + VK + Сайт)
 ```

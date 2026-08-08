@@ -2,6 +2,7 @@
 
 import asyncio
 import hashlib
+import sys
 from datetime import datetime, timezone
 
 from pulse.config import get_config
@@ -19,23 +20,17 @@ def compute_headline_hash(headline: str) -> str:
     return hashlib.md5(norm.encode("utf-8")).hexdigest()
 
 
-async def run_intake_job() -> int:
-    """Run intake for enabled RSS/Telegram feeds, score pending items, and check watchdog health.
-
-    Returns:
-        int: Total new articles collected and saved.
-    """
+async def run_fetch_job() -> int:
+    """Fetch articles from RSS/Telegram feeds and save as pending in Supabase."""
     cfg = get_config().settings
     configure_logging(env=cfg.PULSE_ENV, log_level=cfg.LOG_LEVEL)
-    logger.info("starting_intake_job")
+    logger.info("starting_intake_fetch_job")
 
     repo = NewsRepo()
     registry = SourceRegistry.load_from_config()
     enabled_adapters = registry.get_all()
 
     total_saved = 0
-
-    # 1. Fetch articles from enabled adapters
     for adapter in enabled_adapters:
         try:
             articles = await adapter.fetch_latest()
@@ -44,7 +39,6 @@ async def run_intake_job() -> int:
                 if not headline:
                     continue
 
-                h_hash = compute_headline_hash(headline)
                 saved = repo.add_article(
                     source_id=adapter.source_id,
                     headline=headline,
@@ -57,11 +51,20 @@ async def run_intake_job() -> int:
             logger.error("adapter_fetch_failed", source=adapter.source_id, error=str(e))
 
     logger.info("intake_fetch_completed", total_saved=total_saved)
+    return total_saved
 
-    # 2. Score pending news items using Gemini LLM Curator
+
+async def run_score_job() -> int:
+    """Score pending news items via Gemini LLM and execute watchdog health checks."""
+    cfg = get_config().settings
+    configure_logging(env=cfg.PULSE_ENV, log_level=cfg.LOG_LEVEL)
+    logger.info("starting_intake_score_job")
+
+    repo = NewsRepo()
     curator = LLMCurator()
-    pending = repo.get_pending_news(limit=25)
+    pending = repo.get_pending_news(limit=100)
     scored_count = 0
+
     if pending:
         logger.info("scoring_pending_news", count=len(pending))
         try:
@@ -78,15 +81,27 @@ async def run_intake_job() -> int:
 
     logger.info("intake_scoring_completed", scored_count=scored_count)
 
-    # 3. Execute System Watchdog checks
+    # Execute System Watchdog checks
     try:
         watchdog = SystemWatchdog(silence_hours=3, cooldown_minutes=15)
         await watchdog.run_health_checks()
     except Exception as e:
         logger.error("watchdog_checks_failed", error=str(e))
 
-    return total_saved
+    return scored_count
+
+
+async def run_intake_job(mode: str = "all") -> int:
+    if mode == "fetch":
+        return await run_fetch_job()
+    elif mode == "score":
+        return await run_score_job()
+    else:
+        f_count = await run_fetch_job()
+        s_count = await run_score_job()
+        return f_count + s_count
 
 
 if __name__ == "__main__":
-    asyncio.run(run_intake_job())
+    mode_arg = sys.argv[1] if len(sys.argv) > 1 else "all"
+    asyncio.run(run_intake_job(mode=mode_arg))
