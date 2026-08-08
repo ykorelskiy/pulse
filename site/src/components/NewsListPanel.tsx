@@ -26,7 +26,7 @@ export const NewsListPanel: React.FC<NewsListPanelProps> = ({
   const top15 = (newsItems || []).slice(0, 15);
 
   return (
-    <div className="news-panel-container">
+    <div className="news-panel-container fade-in-panel">
       {/* 2-line Strict Aligned Header Box */}
       <div className="news-panel-header-box">
         <div className="news-title-left">
@@ -53,23 +53,28 @@ export const NewsListPanel: React.FC<NewsListPanelProps> = ({
         </div>
       </div>
 
-      {/* Clean 1-Column Cardless News List (Exact 720px Height Frame) */}
+      {/* Clean 1-Column News List with Right-Aligned Equal-Width Buttons */}
       {top15.length > 0 ? (
         <div className="news-items-clean-list">
           {top15.map((item, idx) => (
             <div key={idx} className="news-clean-item">
-              <span className="news-num-prefix">{idx + 1}.</span>
-              <span className="news-clean-text">{item.text}</span>
-              {item.url && (
+              <div className="news-content-left">
+                <span className="news-num-prefix">{idx + 1}.</span>
+                <span className="news-clean-text">{item.text}</span>
+              </div>
+
+              {item.url ? (
                 <a
                   href={item.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="news-source-inline-badge"
+                  className="news-source-fixed-btn"
                 >
                   <span>{item.source || "Источник"}</span>
-                  <ExternalLink size={11} />
+                  <ExternalLink size={12} />
                 </a>
+              ) : (
+                <div className="news-source-fixed-placeholder" />
               )}
             </div>
           ))}
