@@ -181,6 +181,7 @@ class TopicRanker:
                 "headline": item["headline"],
                 "source_name": item["source_name"],
                 "url": item.get("url", "#"),
+                "total_score": item.get("total_score"),
                 "category_title": "Главные новости дня",
             })
             sname = item["source_name"]
