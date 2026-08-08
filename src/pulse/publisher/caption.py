@@ -39,12 +39,15 @@ class CaptionBuilder:
         if news_items:
             # Format top 15 news items for channel post
             for idx, item in enumerate(news_items[:15], 1):
-                text = item.get("text", "")
+                raw_text = item.get("headline") or item.get("title") or item.get("text") or ""
+                text = raw_text.strip()
                 url = item.get("url", "")
-                if url:
+                if url and text:
                     lines.append(f"{idx}. [{text}]({url})")
-                else:
+                elif text:
                     lines.append(f"{idx}. {text}")
+                elif url:
+                    lines.append(f"{idx}. [{url}]({url})")
         else:
             lines.append("Ежедневный выпуск отрывного календаря.")
 
@@ -88,12 +91,15 @@ class CaptionBuilder:
 
         if news_items:
             for idx, item in enumerate(news_items[:15], 1):
-                text = html.escape(item.get("text", ""))
+                raw_text = item.get("headline") or item.get("title") or item.get("text") or ""
+                text = html.escape(raw_text.strip())
                 url = item.get("url", "")
-                if url:
+                if url and text:
                     lines.append(f'{idx}. <a href="{url}">{text}</a>')
-                else:
+                elif text:
                     lines.append(f"{idx}. {text}")
+                elif url:
+                    lines.append(f'{idx}. <a href="{url}">{url}</a>')
         else:
             lines.append("Ежедневный выпуск отрывного календаря.")
 
