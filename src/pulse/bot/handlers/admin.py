@@ -223,10 +223,24 @@ async def cmd_preview_post(message: types.Message) -> None:
 
         img_url = f"https://zyoznyeqvorhztrpgdjw.supabase.co/storage/v1/object/public/pulse-covers/{image_path}"
 
-        await message.answer_photo(
-            photo=img_url,
-            caption=caption,
-            parse_mode="Markdown",
-        )
+        if len(caption) <= 1000:
+            await message.answer_photo(
+                photo=img_url,
+                caption=caption,
+                parse_mode="Markdown",
+            )
+        else:
+            [y, m, d] = target_date.split("-")
+            short_caption = f"🖼 **ПУЛЬС ДНЯ — {d}.{m}.{y}**"
+            await message.answer_photo(
+                photo=img_url,
+                caption=short_caption,
+                parse_mode="Markdown",
+            )
+            await message.answer(
+                text=caption,
+                parse_mode="Markdown",
+                disable_web_page_preview=True,
+            )
     except Exception as e:
         await message.answer(f"❌ Ошибка при подготовке поста: {e}")
