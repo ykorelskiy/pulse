@@ -181,6 +181,26 @@ class LLMCurator:
 
         for item in items:
             item_id = str(item.get("id", ""))
+
+            # Short-circuit for calend.ru holidays (bypass LLM entirely)
+            if item.get("source_id") == "calend_ru":
+                # Clean up the headline (remove "8 - " or "9 - ")
+                raw_hl = str(item.get("headline", ""))
+                import re
+                clean_hl = re.sub(r"^\d+\s*-\s*", "", raw_hl)
+                
+                results.append({
+                    "id": item_id,
+                    "ru_headline": clean_hl,
+                    "has_victims": False,
+                    "relevance": 4,
+                    "significance": 3,
+                    "virality": 10,
+                    "comedic_potential": 2,
+                    "tone": 1,
+                })
+                continue
+
             p1 = phase1_map.get(item_id, {})
             sentiment = p1.get("sentiment", "neutral")
             ru_title = p1.get("ru_title", item.get("headline", ""))
