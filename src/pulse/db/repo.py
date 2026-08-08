@@ -387,7 +387,7 @@ class NewsRepo(BaseRepo):
         try:
             allowed_keys = {
                 "ru_headline", "has_victims", "relevance", "comedic_potential",
-                "significance", "tone", "cluster_id", "status"
+                "significance", "tone", "cluster_id", "status", "virality"
             }
             clean_data = {k: v for k, v in update_data.items() if k in allowed_keys}
             if clean_data:
