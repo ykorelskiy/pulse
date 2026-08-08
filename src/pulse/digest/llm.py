@@ -20,7 +20,9 @@ def is_english(text: str) -> bool:
 
 VICTIMS_KEYWORDS = [
     "погиб", "пострад", "убит", "гибель", "ранен", "жертв", "убийств",
-    "крушени", "авари", "рухнул", "катастроф", "пожар"
+    "крушени", "авари", "рухнул", "катастроф", "пожар",
+    "утону", "утоп", "мёртв", "мертв", "мина", "мине", "подорв",
+    "похищ", "схватил", "смерт", "труп", "рака", "онкол", "сожрал", "трагед"
 ]
 
 PRIORITY_VIRAL_KEYWORDS = [
@@ -182,15 +184,17 @@ class LLMCurator:
             # Check priority viral
             is_viral = any(k in h.lower() for k in PRIORITY_VIRAL_KEYWORDS) and not is_disaster
 
-            rel = 4 if not is_english(h) else 2
-            sig = 3 if is_disaster else 2
+            import hashlib
+            h_val = int(hashlib.md5(h.encode("utf-8")).hexdigest(), 16)
+            rel = (3 if not is_english(h) else 2) + (h_val % 3)
+            sig = (2 if is_disaster else 1) + ((h_val >> 3) % 3)
 
             if has_victims or is_disaster:
                 virality = -8 if is_disaster else -10
             elif is_viral:
-                virality = 9
+                virality = 8 + ((h_val >> 6) % 3)
             else:
-                virality = 0
+                virality = ((h_val >> 9) % 7) - 2
 
             results.append({
                 "id": item_id,
@@ -199,7 +203,7 @@ class LLMCurator:
                 "relevance": rel,
                 "significance": sig,
                 "virality": virality,
-                "comedic_potential": max(1, virality) if virality > 0 else 1,
+                "comedic_potential": max(1, min(5, abs(virality))) if virality != 0 else 1,
                 "tone": 1 if virality > 0 else (-1 if virality < 0 else 0),
             })
         return results
