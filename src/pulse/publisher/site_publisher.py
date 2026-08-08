@@ -39,6 +39,7 @@ def process_and_upload_cover(
     target_date_str: str | None = None,
     title: str | None = None,
     news_data: list | None = None,
+    prompt: str | None = None,
     published: bool = True,
 ) -> dict[str, str]:
     """Process image, upload 3 WebP variants to Supabase Storage, and upsert site_issues row.
@@ -48,6 +49,7 @@ def process_and_upload_cover(
         target_date_str: Target issue date string (YYYY-MM-DD). Defaults to today in MSK.
         title: Optional title / theme of the issue.
         news_data: Optional list of top news items.
+        prompt: Optional AI prompt used to generate the cover image.
         published: Whether issue is published immediately.
 
     Returns:
@@ -93,6 +95,7 @@ def process_and_upload_cover(
         "thumb128_path": thumb128_path,
         "title": title or f"Пульс дня — {dt.strftime('%d.%m.%Y')}",
         "news": news_data or [],
+        "prompt": prompt,
         "published": published,
         "published_at": datetime.now(timezone.utc).isoformat() if published else None,
     }

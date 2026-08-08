@@ -140,10 +140,18 @@ async def handle_photo_cover_upload(message: types.Message, bot: Bot) -> None:
 
     caption = (message.caption or "").strip()
     target_date = None
-    if caption and len(caption) == 10 and caption[4] == "-" and caption[7] == "-":
-        target_date = caption
+    prompt_text = None
 
-    await message.answer("🖼 Принял картинку! Генерирую превью (WebP) и загружаю в хранилище сайта...")
+    if caption:
+        lines = caption.split("\n", 1)
+        first_line = lines[0].strip()
+        if len(first_line) == 10 and first_line[4] == "-" and first_line[7] == "-":
+            target_date = first_line
+            prompt_text = lines[1].strip() if len(lines) > 1 else None
+        else:
+            prompt_text = caption
+
+    await message.answer("🖼 Принял картинку! Генерирую превью (WebP), сохраняю промпт и загружаю в хранилище сайта...")
 
     try:
         photo = message.photo[-1]
@@ -152,13 +160,18 @@ async def handle_photo_cover_upload(message: types.Message, bot: Bot) -> None:
         image_bytes = downloaded.read()
 
         from pulse.publisher.site_publisher import process_and_upload_cover
-        res = process_and_upload_cover(image_bytes, target_date_str=target_date, published=True)
+        res = process_and_upload_cover(
+            image_bytes,
+            target_date_str=target_date,
+            prompt=prompt_text,
+            published=True,
+        )
 
         await message.answer(
             f"✅ **Выпуск успешно опубликован на сайте!**\n\n"
             f"📅 **Дата:** `{res['issue_date']}`\n"
-            f"🖼 **Путь:** `{res['cover_path']}`\n"
-            f"📱 **Превью:** `{res['thumb480_path']}`"
+            f"✍️ **Промпт:** `{prompt_text or 'Не указан'}`\n"
+            f"🖼 **Обложка:** `{res['cover_path']}`"
         )
     except Exception as e:
         await message.answer(f"❌ Ошибка при публикации картинки: {e}")
