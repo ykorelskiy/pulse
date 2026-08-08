@@ -179,7 +179,7 @@ class LLMCurator:
             sentiment = p1.get("sentiment", "neutral")
             ru_title = p1.get("ru_title", item.get("headline", ""))
 
-            if sentiment == "negative":
+            if sentiment == "negative" or is_english(ru_title):
                 # Immediately reject — no Phase 2 needed
                 results.append({
                     "id": item_id,
