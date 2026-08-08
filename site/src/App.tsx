@@ -111,7 +111,7 @@ export const App: React.FC = () => {
   return (
     <div className="app-root">
       {/* Main Grid Content (Unified Natural Scroll) */}
-      <main className="main-container">
+      <main className={`main-container ${rightPanelView === "news" ? "news-mode-active" : ""}`}>
         {/* Left Column: Tear-off Sheet */}
         <section className="left-section">
           <CalendarSheet

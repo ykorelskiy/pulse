@@ -23,6 +23,8 @@ export const NewsListPanel: React.FC<NewsListPanelProps> = ({
   const headerDate = getFormattedHeaderDate(currentDateStr);
   const formattedTitleDate = `${headerDate.dayNum} ${headerDate.monthName.toUpperCase()} ${headerDate.year}`;
 
+  const top15 = (newsItems || []).slice(0, 15);
+
   return (
     <div className="news-panel-container">
       {/* 2-line Strict Aligned Header Box */}
@@ -51,25 +53,24 @@ export const NewsListPanel: React.FC<NewsListPanelProps> = ({
         </div>
       </div>
 
-      {/* News Items List */}
-      {newsItems && newsItems.length > 0 ? (
-        <div className="news-items-list">
-          {newsItems.slice(0, 15).map((item, idx) => (
-            <div key={idx} className="news-item-card">
-              <div className="news-item-num">{idx + 1}</div>
+      {/* 2-Column Ultra Compact News Grid */}
+      {top15.length > 0 ? (
+        <div className="news-items-grid-2col">
+          {top15.map((item, idx) => (
+            <div key={idx} className="news-item-card-compact">
+              <div className="news-item-num-compact">{idx + 1}</div>
 
-              <div className="news-item-body">
-                <p className="news-item-text">{item.text}</p>
-
+              <div className="news-item-text-inline">
+                <span>{item.text}</span>
                 {item.url && (
                   <a
                     href={item.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="news-source-link"
+                    className="news-source-inline-badge"
                   >
-                    <span>{item.source || "Первоисточник"}</span>
-                    <ExternalLink size={14} />
+                    <span>{item.source || "Источник"}</span>
+                    <ExternalLink size={12} />
                   </a>
                 )}
               </div>
