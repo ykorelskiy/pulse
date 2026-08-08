@@ -61,7 +61,7 @@ class SystemWatchdog:
         try:
             client = get_supabase_client()
             registry = SourceRegistry.load_from_config()
-            enabled_adapters = registry.get_enabled()
+            enabled_adapters = registry.get_all()
             enabled_sources = {a.source_id: getattr(a, "name", a.source_id) for a in enabled_adapters}
 
             if not enabled_sources:

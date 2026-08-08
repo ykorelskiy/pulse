@@ -31,7 +31,7 @@ async def run_intake_job() -> int:
 
     repo = NewsRepo()
     registry = SourceRegistry.load_from_config()
-    enabled_adapters = registry.get_enabled()
+    enabled_adapters = registry.get_all()
 
     total_saved = 0
 
