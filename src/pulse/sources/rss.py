@@ -107,11 +107,15 @@ class CalendRuAdapter(RSSSourceAdapter):
         
         combined_headline = "Праздники сегодня: " + ", ".join(titles)
         
+        # Make URL unique per day so the deduplicator doesn't block it tomorrow
+        date_str = articles[0].published_at.strftime("%Y-%m-%d") if articles[0].published_at else "today"
+        unique_url = f"https://www.calend.ru/?date={date_str}"
+        
         merged = NewsArticle(
             source_id=self.source_id,
             headline=combined_headline,
             summary="Сегодня отмечаются: " + ", ".join(titles),
-            url="https://www.calend.ru/",
+            url=unique_url,
             published_at=articles[0].published_at,
         )
         return [merged]
