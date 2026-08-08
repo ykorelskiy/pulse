@@ -93,15 +93,26 @@ class VKPublisher:
             # Attempt photo upload if image provided
             if image_input:
                 try:
-                    image_bytes: bytes
+                    import io
+                    from PIL import Image
+
+                    raw_bytes: bytes
                     if isinstance(image_input, bytes):
-                        image_bytes = image_input
+                        raw_bytes = image_input
                     elif isinstance(image_input, str) and (image_input.startswith("http://") or image_input.startswith("https://")):
                         res = await client.get(image_input)
                         res.raise_for_status()
-                        image_bytes = res.content
+                        raw_bytes = res.content
                     else:
-                        image_bytes = Path(image_input).read_bytes()
+                        raw_bytes = Path(image_input).read_bytes()
+
+                    # Convert WebP/PNG/etc. to real JPEG for VK API compliance
+                    img = Image.open(io.BytesIO(raw_bytes)).convert("RGB")
+                    if img.width > 2048 or img.height > 2048:
+                        img.thumbnail((2048, 2048))
+                    jpeg_io = io.BytesIO()
+                    img.save(jpeg_io, format="JPEG", quality=92)
+                    jpeg_bytes = jpeg_io.getvalue()
 
                     # 1. Get Wall Upload Server URL
                     upload_server_url = "https://api.vk.com/method/photos.getWallUploadServer"
@@ -116,8 +127,8 @@ class VKPublisher:
                     if "response" in data_server and "upload_url" in data_server["response"]:
                         upload_url = data_server["response"]["upload_url"]
 
-                        # 2. Upload photo bytes to VK Upload Server
-                        files = {"photo": ("cover.jpg", image_bytes, "image/jpeg")}
+                        # 2. Upload JPEG photo bytes to VK Upload Server
+                        files = {"photo": ("cover.jpg", jpeg_bytes, "image/jpeg")}
                         res_upload = await client.post(upload_url, files=files)
                         upload_result = res_upload.json()
 
