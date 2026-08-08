@@ -74,8 +74,8 @@ class TelegramChannelAdapter(BaseSourceAdapter):
                         headline = f"{headline}. {parts[1].strip()}"
                     headline = headline[:150]
 
-                    # Exact direct URL to specific Telegram post: https://t.me/readovkanews/113658
-                    direct_post_url = f"https://t.me/{post_id}"
+                    # Exact web preview URL to specific Telegram post: https://t.me/s/readovkanews/113658
+                    direct_post_url = f"https://t.me/s/{post_id}"
 
                     articles.append(
                         NewsArticle(
