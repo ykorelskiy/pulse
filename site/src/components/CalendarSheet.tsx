@@ -1,18 +1,19 @@
 import React, { useState } from "react";
-import { ChevronLeft, ChevronRight, Maximize2 } from "lucide-react";
-import type { Issue } from "../types";
-import { getFormattedHeaderDate } from "../utils/dateUtils";
+import { ChevronLeft, ChevronRight, Maximize2, FileText, ArrowRight } from "lucide-react";
+import { getFormattedHeaderDate, isRedDate } from "../utils/dateUtils";
 import { getPublicStorageUrl } from "../lib/supabase";
 
 interface CalendarSheetProps {
   currentDateStr: string;
-  issue?: Issue;
+  issue?: any;
   onPrev: () => void;
   onNext: () => void;
   hasPrev: boolean;
   hasNext: boolean;
   onOpenLightbox: (url: string) => void;
   animating: boolean;
+  onToggleNewsView?: () => void;
+  isNewsViewOpen?: boolean;
 }
 
 export const CalendarSheet: React.FC<CalendarSheetProps> = ({
@@ -24,6 +25,8 @@ export const CalendarSheet: React.FC<CalendarSheetProps> = ({
   hasNext,
   onOpenLightbox,
   animating,
+  onToggleNewsView,
+  isNewsViewOpen,
 }) => {
   const header = getFormattedHeaderDate(currentDateStr);
   const [imgError, setImgError] = useState(false);
@@ -55,36 +58,42 @@ export const CalendarSheet: React.FC<CalendarSheetProps> = ({
         <ChevronRight size={32} />
       </button>
 
-      {/* Main Parchment Tear-off Sheet */}
+      {/* Main Paper Sheet */}
       <div className={`paper-sheet ${animating ? "tearing-off" : ""}`}>
-        {/* Metal Binder Clips Header */}
+        {/* Binder Top Header */}
         <div className="binder-header">
           <div className="binder-clip binder-clip-left"></div>
           <div className="binder-clip binder-clip-right"></div>
           <div className="perforation-line"></div>
         </div>
 
-        {/* Calendar Sheet Date Banner */}
+        {/* Date Section */}
         <div className="sheet-date-block">
-          <div className={`sheet-day-num ${header.isRed ? "red-accent" : ""}`}>{header.dayNum}</div>
+          <div className={`sheet-day-num ${isRedDate(currentDateStr) ? "red-accent" : ""}`}>
+            {header.dayNum}
+          </div>
           <div className="sheet-date-text">
-            <div className={`sheet-month-year ${header.isRed ? "red-accent" : ""}`}>
-              {header.monthName} {header.year}
+            <div className="sheet-month-year">
+              {header.monthName.toUpperCase()} {header.year}
             </div>
-            <div className={`sheet-weekday ${header.isRed ? "red-accent" : ""}`}>
-              {header.dayOfWeekName}
+            <div className={`sheet-weekday ${isRedDate(currentDateStr) ? "red-accent" : ""}`}>
+              {header.dayOfWeekName.toUpperCase()}
             </div>
           </div>
-          <div className="week-badge">НЕДЕЛЯ {header.weekNum}</div>
+          <div className="week-badge">Выпуск {header.dayNum}</div>
         </div>
 
-        {/* Daily Cover Illustration Frame */}
+        {/* Poster / Illustration Section */}
         <div className="cover-frame">
-          {issue && coverUrl && !imgError ? (
-            <div className="cover-wrapper" onClick={() => onOpenLightbox(coverUrl)}>
+          {coverUrl && !imgError ? (
+            <div
+              className="cover-wrapper"
+              onClick={() => onOpenLightbox(coverUrl)}
+              title="Нажмите, чтобы открыть плакат во весь экран"
+            >
               <img
                 src={coverUrl}
-                alt={issue.title || `Пульс дня — ${currentDateStr}`}
+                alt={`Пульс Дня ${header.dayNum} ${header.monthName}`}
                 className="cover-image"
                 onError={() => setImgError(true)}
               />
@@ -103,9 +112,22 @@ export const CalendarSheet: React.FC<CalendarSheetProps> = ({
           )}
         </div>
 
-        {/* Footer info or News placeholder */}
+        {/* Interactive Mascot Pointer Widget */}
         <div className="sheet-footer">
-          <div className="sheet-brand-label">ПУЛЬС ДНЯ — ЕЖЕДНЕВНЫЙ ОТРЫВНОЙ КАЛЕНДАРЬ</div>
+          <div className="mascot-news-widget">
+            <img src="/robot-mascot.jpg" alt="Робот Маскот" className="widget-robot-avatar" />
+            <div className="widget-speech-bubble">
+              <span>События дня в новостях:</span>
+            </div>
+            <button
+              className={`btn-details-toggle ${isNewsViewOpen ? "active" : ""}`}
+              onClick={onToggleNewsView}
+            >
+              <FileText size={18} />
+              <span>{isNewsViewOpen ? "К Календарю" : "Подробнее"}</span>
+              <ArrowRight className="btn-arrow-icon" size={18} />
+            </button>
+          </div>
         </div>
       </div>
     </div>
