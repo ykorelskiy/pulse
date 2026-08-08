@@ -161,8 +161,8 @@ async def send_full_post_preview(
         inline_keyboard=[
             [
                 types.InlineKeyboardButton(
-                    text="🚀 Опубликовать во все каналы (TG + VK + Сайт)",
-                    callback_data=f"publish_all_{target_date}",
+                    text="✅ Подтвердить публикацию в 20:00",
+                    callback_data=f"confirm_publish_{target_date}",
                 )
             ]
         ]
@@ -301,65 +301,26 @@ async def cmd_preview_post(message: types.Message) -> None:
         await message.answer(f"❌ Ошибка при подготовке предпросмотра: {e}")
 
 
-@router.callback_query(F.data.startswith("publish_all_"))
-async def cb_publish_all(callback: types.CallbackQuery) -> None:
-    """Handle one-click multi-platform publication callback."""
+@router.callback_query(F.data.startswith("confirm_publish_"))
+async def cb_confirm_publish(callback: types.CallbackQuery) -> None:
+    """Confirm publication — sets confirmed=true in DB. Actual publish happens at 20:00 MSK via cron."""
     if not is_admin(callback.from_user):
         await callback.answer("⛔️ Недостаточно прав.", show_alert=True)
         return
 
-    target_date = callback.data.replace("publish_all_", "").strip()
-    await callback.answer("🚀 Запускаю изолированную автопубликацию...")
+    target_date = callback.data.replace("confirm_publish_", "").strip()
 
     from pulse.db.client import get_supabase_client
     client = get_supabase_client()
 
-    res = client.table("site_issues").select("*").eq("issue_date", target_date).execute()
-    rows = res.data or []
-    if not rows:
-        await callback.message.answer(f"⚠️ Выпуск на {target_date} не найден.")
-        return
+    try:
+        client.table("site_issues").update({"confirmed": True}).eq("issue_date", target_date).execute()
+    except Exception as e:
+        logger.error("confirm_publish_db_update_failed", error=str(e))
 
-    row = rows[0]
-    image_path = row.get("image_path") or row.get("thumb480_path")
-    img_url = f"https://zyoznyeqvorhztrpgdjw.supabase.co/storage/v1/object/public/pulse-covers/{image_path}"
-    news_items = row.get("news") or []
-
-    await callback.message.answer(f"⏳ **Публикую выпуск за {target_date} во все соцсети...**")
-
-    orchestrator = MultiPublisherOrchestrator()
-    pub_results = await orchestrator.publish_all(
-        issue_date=target_date,
-        img_url=img_url,
-        news_items=news_items,
-        title=row.get("title"),
-    )
-
-    report_lines = [
-        f"🎉 **ВЫПУСК ОТ {target_date} УСПЕШНО ОПУБЛИКОВАН!**",
-        "",
-    ]
-
-    tg = pub_results.get("telegram", {})
-    if tg.get("success"):
-        report_lines.append(f"✅ **Telegram-канал:** [Перейти к посту]({tg['url']})")
-    else:
-        report_lines.append(f"❌ **Telegram-канал:** {tg.get('error')}")
-
-    vk = pub_results.get("vk", {})
-    if vk.get("success"):
-        report_lines.append(f"✅ **ВКонтакте:** [Перейти к посту]({vk['url']})")
-    else:
-        report_lines.append(f"❌ **ВКонтакте:** {vk.get('error')}")
-
-    site = pub_results.get("website", {})
-    if site.get("success"):
-        report_lines.append(f"✅ **Веб-сайт:** [Смотреть выпуск]({site['url']})")
-    else:
-        report_lines.append(f"❌ **Веб-сайт:** {site.get('error')}")
-
+    await callback.answer("✅ Публикация подтверждена!")
     await callback.message.answer(
-        text="\n".join(report_lines),
+        f"✅ **Публикация «Пульс дня — {target_date}» подтверждена!**\n\n"
+        f"Выпуск выйдет автоматически в **20:00 МСК** во все каналы (TG + VK + Сайт).",
         parse_mode=ParseMode.MARKDOWN,
-        disable_web_page_preview=True,
     )
