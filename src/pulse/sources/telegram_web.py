@@ -30,7 +30,7 @@ class TelegramChannelAdapter(BaseSourceAdapter):
         self.category = category
 
     async def fetch_latest(self) -> list[NewsArticle]:
-        """Fetch latest posts from Telegram public web preview with accurate chunk post matching.
+        """Fetch latest posts from Telegram public web preview with exact parent container post IDs.
 
         Returns:
             list[NewsArticle]: Parsed news articles with direct post URLs (https://t.me/s/channel/id).
@@ -45,23 +45,19 @@ class TelegramChannelAdapter(BaseSourceAdapter):
 
                 raw_html = resp.text
 
-                # Find all occurrences of data-post="channel/post_id"
-                post_positions = [m.start() for m in re.finditer(r'data-post="', raw_html)]
-                if not post_positions:
-                    return []
-
-                for i in range(len(post_positions)):
-                    start = post_positions[i]
-                    end = post_positions[i + 1] if i + 1 < len(post_positions) else len(raw_html)
-                    chunk = raw_html[start:end]
-
-                    post_id_match = re.search(r'data-post="([^"]+)"', chunk)
+                # Split HTML strictly by outer message container tags
+                widget_chunks = raw_html.split('<div class="tgme_widget_message ')
+                for chunk in widget_chunks[1:]:
+                    # Extract the parent data-post attribute from the very start of the chunk
+                    post_id_match = re.search(r'data-post="([^"]+)"', chunk[:150])
                     if not post_id_match:
                         continue
+
                     post_id = post_id_match.group(1)
 
+                    # Extract post text body
                     text_match = re.search(
-                        r'class="[^"]*tgme_widget_message_text[^\"]*"[^>]*>(.*?)</div>',
+                        r'<div class="tgme_widget_message_text js-message_text[^"]*"[^>]*>(.*?)</div>',
                         chunk,
                         re.DOTALL,
                     )
@@ -80,7 +76,7 @@ class TelegramChannelAdapter(BaseSourceAdapter):
                         headline = f"{headline}. {parts[1].strip()}"
                     headline = headline[:150]
 
-                    # Direct web preview URL to specific Telegram post: https://t.me/s/readovkanews/113665
+                    # Direct web preview URL to specific Telegram post: https://t.me/s/readovkanews/113642
                     direct_post_url = f"https://t.me/s/{post_id}"
 
                     articles.append(
