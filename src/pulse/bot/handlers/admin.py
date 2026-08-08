@@ -213,41 +213,21 @@ async def cmd_preview_post(message: types.Message) -> None:
             await message.answer(f"⚠️ Для даты {target_date} нет загруженного изображения.")
             return
 
+        img_url = f"https://zyoznyeqvorhztrpgdjw.supabase.co/storage/v1/object/public/pulse-covers/{image_path}"
+
         from pulse.publisher.caption import CaptionBuilder
         builder = CaptionBuilder()
-        caption = builder.build_caption(
+        html_post_text = builder.build_html_caption(
             date_str=target_date,
+            image_url=img_url,
             title=row.get("title"),
             news_items=row.get("news") or [],
         )
 
-        img_url = f"https://zyoznyeqvorhztrpgdjw.supabase.co/storage/v1/object/public/pulse-covers/{image_path}"
-
-        if len(caption) <= 1000:
-            await message.answer_photo(
-                photo=img_url,
-                caption=caption,
-                parse_mode="Markdown",
-            )
-        else:
-            [y, m, d] = target_date.split("-")
-            short_caption = f"🖼 **ПУЛЬС ДНЯ — {d}.{m}.{y}**"
-            
-            # Strip duplicate header line from text message body
-            text_body = caption
-            if text_body.startswith("🖼 **ПУЛЬС ДНЯ"):
-                lines = text_body.split("\n", 2)
-                text_body = lines[-1].lstrip()
-
-            await message.answer_photo(
-                photo=img_url,
-                caption=short_caption,
-                parse_mode="Markdown",
-            )
-            await message.answer(
-                text=text_body,
-                parse_mode="Markdown",
-                disable_web_page_preview=True,
-            )
+        await message.answer(
+            text=html_post_text,
+            parse_mode="HTML",
+            disable_web_page_preview=False,
+        )
     except Exception as e:
         await message.answer(f"❌ Ошибка при подготовке поста: {e}")

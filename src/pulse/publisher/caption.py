@@ -54,3 +54,52 @@ class CaptionBuilder:
         lines.append("💬 Подписаться на ежедневные позитивные новости [тут](https://t.me/a_daily_pulse)")
 
         return "\n".join(lines)
+
+    def build_html_caption(
+        self,
+        date_str: str,
+        image_url: str,
+        title: str | None = None,
+        news_items: list[dict] | None = None,
+        site_url: str = "http://192.109.206.42:8081",
+    ) -> str:
+        """Build single unified HTML Telegram post text with top image preview link.
+
+        Args:
+            date_str: Date string YYYY-MM-DD.
+            image_url: Public image URL.
+            title: Title of issue.
+            news_items: List of news item dicts.
+            site_url: Public showcase website URL.
+
+        Returns:
+            str: Single unified Telegram post HTML text.
+        """
+        import html
+        dt = datetime.strptime(date_str, "%Y-%m-%d")
+        formatted_date = dt.strftime("%d.%m.%Y")
+        [year, month, day] = date_str.split("-")
+
+        lines = []
+        # Zero-width space link to image forces Telegram to render photo preview card on top
+        lines.append(f'<a href="{image_url}">&#8203;</a><b>🖼 ПУЛЬС ДНЯ — {formatted_date}</b>')
+        lines.append("")
+        lines.append("📌 <b>Главные позитивные новости дня:</b>")
+
+        if news_items:
+            for idx, item in enumerate(news_items[:15], 1):
+                text = html.escape(item.get("text", ""))
+                url = item.get("url", "")
+                if url:
+                    lines.append(f'{idx}. <a href="{url}">{text}</a>')
+                else:
+                    lines.append(f"{idx}. {text}")
+        else:
+            lines.append("Ежедневный выпуск отрывного календаря.")
+
+        lines.append("")
+        lines.append(f'📅 Смотреть интерактивный отрывной календарь <a href="{site_url}/{year}/{month}/{day}">тут</a>')
+        lines.append("")
+        lines.append('💬 Подписаться на новости <a href="https://t.me/a_daily_pulse">тут</a>')
+
+        return "\n".join(lines)
