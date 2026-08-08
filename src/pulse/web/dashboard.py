@@ -152,6 +152,10 @@ def build_diagnostic_payload() -> dict[str, Any]:
         }
         s_entry["articles"].append(article_obj)
 
+    # Sort articles in each source strictly by total_score descending
+    for src in sources_summary.values():
+        src["articles"].sort(key=lambda a: a["total_score"], reverse=True)
+
     # Sort sources by total items desc
     sorted_sources = sorted(list(sources_summary.values()), key=lambda x: x["total"], reverse=True)
 
@@ -449,6 +453,9 @@ DASHBOARD_HTML_TEMPLATE = """<!DOCTYPE html>
                 const tableWrap = document.createElement('div');
                 tableWrap.className = 'articles-table-wrap';
 
+                // Sort filtered articles strictly in descending order by total_score
+                filteredArticles.sort((a, b) => b.total_score - a.total_score);
+
                 let rowsHtml = '';
                 filteredArticles.forEach((art, idx) => {
                     let statusBadge = '';
@@ -469,14 +476,14 @@ DASHBOARD_HTML_TEMPLATE = """<!DOCTYPE html>
                                 <a href="${art.url}" target="_blank" class="headline-link">${art.ru_headline}</a>
                                 ${art.headline_orig !== art.ru_headline ? `<div class="orig-title">${art.headline_orig}</div>` : ''}
                             </td>
-                            <td>${art.relevance}</td>
-                            <td>${art.comedic_potential}</td>
-                            <td>${art.significance}</td>
-                            <td>${art.tone}</td>
-                            <td class="score-val">${art.quality_score}</td>
-                            <td>${art.breadth_score}</td>
-                            <td>${art.freshness_score}</td>
-                            <td class="score-val" style="color: var(--accent-blue);">${art.total_score}</td>
+                            <td title="Релевантность (1-5)">${art.relevance}</td>
+                            <td title="Потенциал юмора/абсурда (1-5)">${art.comedic_potential}</td>
+                            <td title="Общая значимость (1-5)">${art.significance}</td>
+                            <td title="Тон (-1/0/+1)">${art.tone}</td>
+                            <td class="score-val" title="Сумма базовых оценок">${art.quality_score}</td>
+                            <td title="Балл за число СМИ в кластере (0-5)">${art.breadth_score}</td>
+                            <td title="Балл за свежесть (0-6)">${art.freshness_score}</td>
+                            <td class="score-val" style="color: var(--accent-blue); font-size: 14px;">${art.total_score}</td>
                             <td>${statusBadge}</td>
                         </tr>
                     `;
@@ -488,14 +495,14 @@ DASHBOARD_HTML_TEMPLATE = """<!DOCTYPE html>
                             <tr>
                                 <th>#</th>
                                 <th>Заголовок новости</th>
-                                <th>Rel</th>
-                                <th>Comed</th>
-                                <th>Sig</th>
-                                <th>Tone</th>
-                                <th>Qual</th>
-                                <th>Breadth</th>
-                                <th>Fresh</th>
-                                <th>Total</th>
+                                <th title="Релевантность для читателя">Релевантность</th>
+                                <th title="Юмор и абсурдность">Юмор</th>
+                                <th title="Масштаб и значимость">Значимость</th>
+                                <th title="Тональность новости">Тон</th>
+                                <th title="Качество (Сумма)">Качество</th>
+                                <th title="Охват в СМИ">Охват (СМИ)</th>
+                                <th title="Свежесть новости">Свежесть</th>
+                                <th title="Итоговый балл ранжирования (по убыванию)">Итоговый балл ⬇️</th>
                                 <th>Статус / Причина</th>
                             </tr>
                         </thead>
