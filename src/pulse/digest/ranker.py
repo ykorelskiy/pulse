@@ -70,7 +70,12 @@ class TopicRanker:
         # Ranking: only use scored items from active enabled sources
         raw_items = [i for i in self.news_repo.get_scored_24h_news() if str(i.get("source_id")) in source_map]
         if not raw_items:
-            raw_items = [i for i in self.news_repo.get_latest_news(limit=200) if str(i.get("source_id")) in source_map]
+            from pulse.publisher.site_publisher import get_active_cycle_start_iso
+            cutoff = get_active_cycle_start_iso()
+            raw_items = [
+                i for i in self.news_repo.get_latest_news(limit=200)
+                if str(i.get("source_id")) in source_map and (i.get("collected_at") or "") >= cutoff
+            ]
 
         now = datetime.now(timezone.utc)
 

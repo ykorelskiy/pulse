@@ -292,15 +292,15 @@ class NewsRepo(BaseRepo):
             return []
 
     def get_scored_24h_news(self) -> list[dict[str, Any]]:
-        """Fetch scored news items from the floating last 24 hours with pagination.
+        """Fetch scored news items from current active cycle (18:00 MSK boundary).
         
         Only returns items with status 'scored' (already evaluated by LLM).
         """
         if not self.client:
             return []
         try:
-            from datetime import timedelta
-            since_iso = (datetime.now(timezone.utc) - timedelta(hours=24)).isoformat()
+            from pulse.publisher.site_publisher import get_active_cycle_start_iso
+            since_iso = get_active_cycle_start_iso()
             all_items: list[dict[str, Any]] = []
             page_size = 1000
             offset = 0
@@ -324,12 +324,12 @@ class NewsRepo(BaseRepo):
         return self.get_latest_news(limit=200)
 
     def get_all_24h_news(self) -> list[dict[str, Any]]:
-        """Fetch ALL news items from the floating last 24 hours (any status) for audit stats."""
+        """Fetch ALL news items from current active cycle (18:00 MSK boundary) for audit stats."""
         if not self.client:
             return []
         try:
-            from datetime import timedelta
-            since_iso = (datetime.now(timezone.utc) - timedelta(hours=24)).isoformat()
+            from pulse.publisher.site_publisher import get_active_cycle_start_iso
+            since_iso = get_active_cycle_start_iso()
             all_items: list[dict[str, Any]] = []
             page_size = 1000
             offset = 0

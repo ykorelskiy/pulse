@@ -41,6 +41,17 @@ def get_active_issue_date() -> str:
     return today_str
 
 
+def get_active_cycle_start_iso() -> str:
+    """Return ISO timestamp string for the start of the current news cycle (18:00 MSK cutoff)."""
+    now_msk = datetime.now(timezone.utc).astimezone(MSK_TZ)
+    today_18msk = now_msk.replace(hour=18, minute=0, second=0, microsecond=0)
+    if now_msk >= today_18msk:
+        start_msk = today_18msk
+    else:
+        start_msk = today_18msk - timedelta(days=1)
+    return start_msk.astimezone(timezone.utc).isoformat()
+
+
 def resize_and_convert_to_webp(image_bytes: bytes, max_long_edge: int, quality: int = 80) -> bytes:
     """Resize image so its long edge <= max_long_edge and convert to WebP format."""
     with Image.open(io.BytesIO(image_bytes)) as img:
