@@ -12,6 +12,26 @@ from pulse.digest.ranker import TopicRanker
 router = Router()
 
 
+from pathlib import Path
+
+def save_admin_chat_id(user_id: int) -> None:
+    """Auto-persist numeric admin chat ID to .env and runtime settings."""
+    try:
+        cfg = get_config().settings
+        if cfg.ADMIN_CHAT_ID != user_id:
+            cfg.ADMIN_CHAT_ID = user_id
+            env_file = Path(".env")
+            if env_file.exists():
+                content = env_file.read_text(encoding="utf-8")
+                if "ADMIN_CHAT_ID=" in content:
+                    lines = [f"ADMIN_CHAT_ID={user_id}" if l.startswith("ADMIN_CHAT_ID=") else l for l in content.splitlines()]
+                    env_file.write_text("\n".join(lines) + "\n", encoding="utf-8")
+                else:
+                    env_file.write_text(content + f"\nADMIN_CHAT_ID={user_id}\n", encoding="utf-8")
+    except Exception:
+        pass
+
+
 def is_admin(user: types.User | None) -> bool:
     """Check if telegram user is admin (@anta9onist or matching ADMIN_CHAT_ID)."""
     if not user:
@@ -19,7 +39,10 @@ def is_admin(user: types.User | None) -> bool:
     cfg = get_config().settings
     if cfg.ADMIN_CHAT_ID and user.id == cfg.ADMIN_CHAT_ID:
         return True
-    return bool(user.username and user.username.lower() == "anta9onist")
+    if user.username and user.username.lower() == "anta9onist":
+        save_admin_chat_id(user.id)
+        return True
+    return False
 
 
 async def send_split_message(message: types.Message, text: str) -> None:
