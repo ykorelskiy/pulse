@@ -114,7 +114,13 @@ class Settings(BaseSettings):
     # Gemini LLM API
     GEMINI_API_KEY: str | None = Field(
         default=None,
-        description="Google Gemini API key for translation and news curation",
+        description="Google Gemini API key for translation and news curation (FALLBACK)",
+    )
+
+    # Groq LLM API (PRIMARY)
+    GROQ_API_KEY: str | None = Field(
+        default=None,
+        description="Groq API key for llama-3.1-8b-instant news scoring (PRIMARY)",
     )
 
     # VKontakte Auto-publishing
