@@ -61,6 +61,16 @@ class LLMCurator:
         if not items:
             return []
 
+        if len(items) > 15:
+            import time
+            all_results = []
+            for i in range(0, len(items), 15):
+                chunk = items[i:i + 15]
+                res = self.score_batch(chunk)
+                all_results.extend(res)
+                time.sleep(2.0)
+            return all_results
+
         if not self.api_key:
             logger.info("gemini_key_not_set_using_heuristic_batch_scoring")
             return self._heuristic_batch_scoring(items)
