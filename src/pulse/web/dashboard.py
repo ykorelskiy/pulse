@@ -144,6 +144,7 @@ def build_diagnostic_payload() -> dict[str, Any]:
             "id": str(item.get("id")),
             "headline_orig": headline_orig,
             "ru_headline": ru_headline,
+            "summary": (item.get("summary") or "").strip(),
             "url": item.get("url", "#"),
             "collected_at": coll_at or "",
             "status": status,
@@ -387,6 +388,7 @@ DASHBOARD_HTML_TEMPLATE = """<!DOCTYPE html>
     <script>
         let globalData = null;
         let activeFilter = 'all';
+        let openSourceIds = new Set();
 
         async function fetchData() {
             try {
@@ -437,11 +439,21 @@ DASHBOARD_HTML_TEMPLATE = """<!DOCTYPE html>
 
                 const card = document.createElement('div');
                 card.className = 'source-card';
-                if (searchQuery || activeFilter !== 'all') card.classList.add('open');
+                if (openSourceIds.has(src.source_id) || searchQuery || activeFilter !== 'all') {
+                    card.classList.add('open');
+                }
 
                 const header = document.createElement('div');
                 header.className = 'source-header';
-                header.onclick = () => card.classList.toggle('open');
+                header.onclick = () => {
+                    if (openSourceIds.has(src.source_id)) {
+                        openSourceIds.delete(src.source_id);
+                        card.classList.remove('open');
+                    } else {
+                        openSourceIds.add(src.source_id);
+                        card.classList.add('open');
+                    }
+                };
 
                 header.innerHTML = `
                     <div class="source-title">
@@ -476,10 +488,12 @@ DASHBOARD_HTML_TEMPLATE = """<!DOCTYPE html>
                         statusBadge = '<span class="status-cell archived">📦 Дубликат</span>';
                     }
 
+                    const summaryClean = (art.summary || art.ru_headline || "").replace(/"/g, '&quot;');
+
                     rowsHtml += `
                         <tr>
                             <td>${idx + 1}</td>
-                            <td>
+                            <td title="${summaryClean}">
                                 <a href="${art.url}" target="_blank" class="headline-link">${art.ru_headline}</a>
                                 ${art.headline_orig !== art.ru_headline ? `<div class="orig-title">${art.headline_orig}</div>` : ''}
                             </td>
@@ -500,7 +514,7 @@ DASHBOARD_HTML_TEMPLATE = """<!DOCTYPE html>
                         <thead>
                             <tr>
                                 <th>#</th>
-                                <th>Заголовок новости</th>
+                                <th>Заголовок новости (наведите мышь для краткого текста)</th>
                                 <th title="Релевантность для читателя (1-5)">Релевантность</th>
                                 <th title="Масштаб и значимость (1-5)">Значимость</th>
                                 <th title="Виральность, юмор и позитив (-10..+10)">Виральность (-10..+10)</th>
@@ -524,7 +538,7 @@ DASHBOARD_HTML_TEMPLATE = """<!DOCTYPE html>
         }
 
         fetchData();
-        setInterval(fetchData, 30000);
+        setInterval(fetchData, 300000); // 5-minute auto-refresh
     </script>
 </body>
 </html>
