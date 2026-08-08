@@ -29,6 +29,10 @@ class RateLimitMiddleware(BaseMiddleware):
         if not from_user or not raw_text:
             return await handler(event, data)
 
+        from pulse.bot.handlers.admin import is_admin
+        if is_admin(from_user):
+            return await handler(event, data)
+
         text = raw_text.strip()
         # Allow /start, /help, /myword and admin commands without rate/window limiting
         if text.startswith(
@@ -42,6 +46,9 @@ class RateLimitMiddleware(BaseMiddleware):
                 "/news",
                 "/brief",
                 "/force_brief",
+                "/post",
+                "/preview_post",
+                "/preview",
             )
         ):
             return await handler(event, data)
