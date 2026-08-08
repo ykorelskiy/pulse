@@ -1,18 +1,23 @@
 import asyncio
 from datetime import datetime, timezone
+from pathlib import Path
 
 from aiogram import Bot, F, Router, types
+from aiogram.enums import ParseMode
 from aiogram.filters import Command
 
 from pulse.briefsmith.builder import BriefBuilder
 from pulse.config import get_config
 from pulse.db.repo import WordsRepo
 from pulse.digest.ranker import TopicRanker
+from pulse.logging import get_logger
+from pulse.publisher.caption import CaptionBuilder
+from pulse.publisher.orchestrator import MultiPublisherOrchestrator
+from pulse.publisher.site_publisher import get_msk_today, process_and_upload_cover
 
+logger = get_logger("pulse.bot.admin")
 router = Router()
 
-
-from pathlib import Path
 
 def save_admin_chat_id(user_id: int) -> None:
     """Auto-persist numeric admin chat ID to .env and runtime settings."""
@@ -58,7 +63,7 @@ async def send_split_message(message: types.Message, text: str) -> None:
             if current_chunk:
                 try:
                     await message.answer(
-                        current_chunk, parse_mode="Markdown", link_preview_options=no_preview
+                        current_chunk, parse_mode=ParseMode.MARKDOWN, link_preview_options=no_preview
                     )
                 except Exception:
                     await message.answer(
@@ -70,7 +75,7 @@ async def send_split_message(message: types.Message, text: str) -> None:
     if current_chunk:
         try:
             await message.answer(
-                current_chunk, parse_mode="Markdown", link_preview_options=no_preview
+                current_chunk, parse_mode=ParseMode.MARKDOWN, link_preview_options=no_preview
             )
         except Exception:
             await message.answer(
@@ -78,103 +83,126 @@ async def send_split_message(message: types.Message, text: str) -> None:
             )
 
 
-
-
-
-@router.message(Command("show_words", "words"))
-async def cmd_show_words(message: types.Message) -> None:
-    """Show top reader submitted words with frequency count for admin."""
+@router.message(Command("brief"))
+async def cmd_brief(message: types.Message) -> None:
+    """Generate daily brief on demand and send to admin."""
     if not is_admin(message.from_user):
         return
 
-    repo = WordsRepo()
-    recent = repo.get_recent_words(limit=200)
+    await message.answer("🔄 **Формирую бриф и отбор новостей...**")
 
-    if not recent:
-        await message.answer("📊 **Топ слов от читателей:**\nСлов пока нет.")
-        return
+    try:
+        ranker = TopicRanker()
+        top_10, top_50, source_stats = ranker.get_top_curated_digest(items_per_category=10, top_k=10)
+        words_repo = WordsRepo()
+        top_words = words_repo.get_active_words(limit=5)
+        word_strings = [w["word"] for w in top_words]
 
-    counts: dict[str, int] = {}
-    for entry in recent:
-        w = entry.get("word", "").strip().lower()
-        if w:
-            counts[w] = counts.get(w, 0) + 1
+        builder = BriefBuilder()
+        today_str = get_msk_today()
+        brief_text = builder.build_daily_brief(
+            date_str=today_str,
+            top_10_curated=top_10,
+            top_50_flat=top_50,
+            source_stats=source_stats,
+            top_words=word_strings,
+        )
 
-    sorted_words = sorted(counts.items(), key=lambda x: x[1], reverse=True)[:20]
-
-    lines = ["📊 **Топ 20 фраз и слов от читателей за последнее время:**\n"]
-    for idx, (word, cnt) in enumerate(sorted_words, 1):
-        lines.append(f"{idx}. **{word}** — {cnt} шт.")
-
-    lines.append(f"\nВсего получено фраз: {len(recent)}")
-    await message.answer("\n".join(lines), parse_mode="Markdown")
+        await send_split_message(message, brief_text)
+    except Exception as e:
+        logger.error("cmd_brief_failed", error=str(e))
+        await message.answer(f"❌ Ошибка при генерации брифа: {e}")
 
 
-@router.message(Command("show_news", "news"))
-async def cmd_show_news(message: types.Message) -> None:
-    """Show top 20 categorized news headlines for admin."""
+@router.message(Command("word"))
+async def cmd_add_word(message: types.Message) -> None:
+    """Add a new word to reader guesses."""
     if not is_admin(message.from_user):
         return
 
-    ranker = TopicRanker()
-    categorized = ranker.get_categorized_news(items_per_category=3)
-
-    lines = ["📰 **Топ новостей по 6 категориям:**"]
-    for cat in categorized:
-        lines.append(f"\n{cat['icon']} **{cat['title']} ({cat['weight']}):**")
-        for idx, item in enumerate(cat["items"], 1):
-            lines.append(f"  {idx}. [{item['source_name']}] [{item['headline']}]({item['url']})")
-
-    text = "\n".join(lines)
-    await send_split_message(message, text)
-
-
-@router.message(Command("brief", "force_brief"))
-async def cmd_force_brief(message: types.Message) -> None:
-    """Generate and send today's daily author brief on-demand."""
-    if not is_admin(message.from_user):
+    text = message.text or ""
+    parts = text.strip().split(maxsplit=1)
+    if len(parts) < 2:
+        await message.answer("⚠️ Использование: `/word <слово>`", parse_mode=ParseMode.MARKDOWN)
         return
 
-    await message.answer("🔄 Генерирую свежий бриф дня с ИИ-отбором...")
+    word = parts[1].strip()
+    try:
+        words_repo = WordsRepo()
+        added = words_repo.add_word(word=word, source="author")
+        await message.answer(f"✅ Слово **«{added['word']}»** добавлено в список отгадок!", parse_mode=ParseMode.MARKDOWN)
+    except Exception as e:
+        await message.answer(f"❌ Ошибка добавления слова: {e}")
 
-    ranker = TopicRanker()
-    top_10, top_50, source_stats = ranker.get_top_curated_digest(items_per_category=10, top_k=10)
-    words = ranker.get_top_reader_words(limit=5)
-    builder = BriefBuilder()
 
-    today_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-    brief_text = builder.build_daily_brief(
-        date_str=today_str,
-        top_10_curated=top_10,
-        top_50_flat=top_50,
-        source_stats=source_stats,
-        top_words=words,
+async def send_full_post_preview(
+    target_date: str,
+    row: dict[str, Any],
+    bot: Bot,
+    chat_id: int,
+) -> None:
+    """Send photo + 15 news caption + publish button preview."""
+    image_path = row.get("image_path") or row.get("thumb480_path")
+    img_url = f"https://zyoznyeqvorhztrpgdjw.supabase.co/storage/v1/object/public/pulse-covers/{image_path}"
+
+    builder = CaptionBuilder()
+    caption = builder.build_caption(
+        date_str=target_date,
+        title=row.get("title"),
+        news_items=row.get("news") or [],
+    )
+
+    publish_kbd = types.InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                types.InlineKeyboardButton(
+                    text="🚀 Опубликовать во все каналы (TG + VK + Сайт)",
+                    callback_data=f"publish_all_{target_date}",
+                )
+            ]
+        ]
+    )
+
+    [y, m, d] = target_date.split("-")
+    short_caption = f"🖼 **ПУЛЬС ДНЯ — {d}.{m}.{y}**"
+    text_body = caption
+    if text_body.startswith("🖼 **ПУЛЬС ДНЯ"):
+        lines = text_body.split("\n", 2)
+        text_body = lines[-1].lstrip()
+
+    await bot.send_photo(
+        chat_id=chat_id,
+        photo=img_url,
+        caption=short_caption,
+        parse_mode=ParseMode.MARKDOWN,
+    )
+    await bot.send_message(
+        chat_id=chat_id,
+        text=text_body,
+        parse_mode=ParseMode.MARKDOWN,
+        disable_web_page_preview=True,
+        reply_markup=publish_kbd,
     )
 
 
-    await send_split_message(message, brief_text)
-
-
 @router.message(F.photo)
-async def handle_photo_cover_upload(message: types.Message, bot: Bot) -> None:
-    """Handle photo upload by admin for site cover issue."""
+async def cmd_process_photo(message: types.Message, bot: Bot) -> None:
+    """Process uploaded poster photo, generate 3 sizes, and immediately send full post preview."""
     if not is_admin(message.from_user):
         return
 
-    caption = (message.caption or "").strip()
-    target_date = None
+    caption_text = message.caption or ""
+    parts = caption_text.strip().split(maxsplit=1)
+    target_date = get_msk_today()
     prompt_text = None
 
-    if caption:
-        lines = caption.split("\n", 1)
-        first_line = lines[0].strip()
-        if len(first_line) == 10 and first_line[4] == "-" and first_line[7] == "-":
-            target_date = first_line
-            prompt_text = lines[1].strip() if len(lines) > 1 else None
-        else:
-            prompt_text = caption
+    if len(parts) > 0 and len(parts[0]) == 10 and parts[0][4] == "-" and parts[0][7] == "-":
+        target_date = parts[0]
+        prompt_text = parts[1] if len(parts) > 1 else None
+    else:
+        prompt_text = caption_text if caption_text else None
 
-    await message.answer("🖼 Принял картинку! Генерирую превью (WebP), сохраняю промпт и загружаю в хранилище сайта...")
+    await message.answer(f"⚙️ **Обрабатываю обложку на {target_date} (генерирую 3 размера)...**")
 
     try:
         photo = message.photo[-1]
@@ -182,28 +210,39 @@ async def handle_photo_cover_upload(message: types.Message, bot: Bot) -> None:
         downloaded = await bot.download_file(file_info.file_path)
         image_bytes = downloaded.read()
 
-        from pulse.publisher.site_publisher import process_and_upload_cover
         res = process_and_upload_cover(
             image_bytes,
             target_date_str=target_date,
             prompt=prompt_text,
-            published=True,
+            published=False,
         )
 
-        await message.answer(
-            f"✅ **Выпуск успешно опубликован на сайте!**\n\n"
-            f"📅 **Дата:** `{res['issue_date']}`\n"
-            f"✍️ **Промпт:** `{prompt_text or 'Не указан'}`\n"
-            f"🖼 **Обложка:** `{res['cover_path']}`"
-        )
+        logger.info("cover_3_sizes_processed_successfully", date=target_date, paths=res)
+
+        from pulse.db.client import get_supabase_client
+        client = get_supabase_client()
+        row_res = client.table("site_issues").select("*").eq("issue_date", target_date).execute()
+        rows = row_res.data or []
+
+        if rows:
+            await send_full_post_preview(
+                target_date=target_date,
+                row=rows[0],
+                bot=bot,
+                chat_id=message.chat.id,
+            )
+        else:
+            await message.answer(f"✅ **Обложка сохранена (3 размера сформированы)!**\nОбновляю запись выпуска...")
+
     except Exception as e:
-        await message.answer(f"❌ Ошибка при публикации картинки: {e}")
+        logger.error("process_photo_failed", error=str(e))
+        await message.answer(f"❌ Ошибка при обработке картинки: {e}")
 
 
 @router.message(Command("post"))
 @router.message(Command("preview_post"))
-async def cmd_preview_post(message: types.Message) -> None:
-    """Send channel post preview (photo + formatted text) to admin."""
+async def cmd_preview_post(message: types.Message, bot: Bot) -> None:
+    """Send channel post preview if image uploaded, or latest top 15 news if no image yet."""
     if not is_admin(message.from_user):
         return
 
@@ -213,7 +252,6 @@ async def cmd_preview_post(message: types.Message) -> None:
     if len(parts) > 1 and len(parts[1]) == 10 and parts[1][4] == "-" and parts[1][7] == "-":
         target_date = parts[1]
 
-    from pulse.publisher.site_publisher import get_msk_today
     if not target_date:
         target_date = get_msk_today()
 
@@ -223,68 +261,92 @@ async def cmd_preview_post(message: types.Message) -> None:
     try:
         res = client.table("site_issues").select("*").eq("issue_date", target_date).execute()
         rows = res.data or []
-        if not rows:
-            await message.answer(
-                f"⚠️ **Выпуск на {target_date} еще не сформирован!**\n\n"
-                f"Отправьте боту изображение с подписью, чтобы создать выпуск."
-            )
-            return
+        row = rows[0] if rows else None
 
-        row = rows[0]
-        image_path = row.get("image_path") or row.get("thumb480_path")
-        if not image_path:
-            await message.answer(f"⚠️ Для даты {target_date} нет загруженного изображения.")
-            return
-
-        img_url = f"https://zyoznyeqvorhztrpgdjw.supabase.co/storage/v1/object/public/pulse-covers/{image_path}"
-
-        from pulse.publisher.caption import CaptionBuilder
-        builder = CaptionBuilder()
-        caption = builder.build_caption(
-            date_str=target_date,
-            title=row.get("title"),
-            news_items=row.get("news") or [],
-        )
-
-        if len(caption) <= 1000:
-            await message.answer_photo(
-                photo=img_url,
-                caption=caption,
-                parse_mode="Markdown",
+        # Check if cover image has been uploaded
+        if row and (row.get("image_path") or row.get("thumb480_path")):
+            await send_full_post_preview(
+                target_date=target_date,
+                row=row,
+                bot=bot,
+                chat_id=message.chat.id,
             )
         else:
-            [y, m, d] = target_date.split("-")
-            short_caption = f"🖼 **ПУЛЬС ДНЯ — {d}.{m}.{y}**"
-
-            # Strip duplicate header line from text message body
-            text_body = caption
-            if text_body.startswith("🖼 **ПУЛЬС ДНЯ"):
-                lines = text_body.split("\n", 2)
-                text_body = lines[-1].lstrip()
-
-            await message.answer_photo(
-                photo=img_url,
-                caption=short_caption,
-                parse_mode="Markdown",
-            )
-            await message.answer(
-                text=text_body,
-                parse_mode="Markdown",
-                disable_web_page_preview=True,
-            )
-
-        # Multi-platform publication: VKontakte
-        try:
-            from pulse.publisher.vk import VKPublisher
-            vk_pub = VKPublisher()
-            vk_text = vk_pub.format_vk_post_text(
+            # No cover image yet -> return latest 15 news items for today
+            ranker = TopicRanker()
+            top_10, top_50, _ = ranker.get_top_curated_digest(items_per_category=10, top_k=10)
+            builder = CaptionBuilder()
+            news_caption = builder.build_caption(
                 date_str=target_date,
-                news_items=row.get("news") or [],
+                news_items=top_50[:15],
             )
-            vk_url = await vk_pub.publish_issue(image_input=img_url, text=vk_text)
-            await message.answer(f"🌐 **Опубликовано во ВКонтакте:** [Перейти к посту в VK]({vk_url})", parse_mode="Markdown")
-        except Exception as vk_err:
-            await message.answer(f"⚠️ **ВКонтакте:** {vk_err}")
+            header = f"📰 **АКТУАЛЬНЫЙ ТЕКСТ 15 НОВОСТЕЙ НА {target_date} (обложка еще не загружена):**\n\n"
+            await send_split_message(message, header + news_caption)
 
     except Exception as e:
-        await message.answer(f"❌ Ошибка при подготовке поста: {e}")
+        logger.error("cmd_preview_post_failed", error=str(e))
+        await message.answer(f"❌ Ошибка при подготовке предпросмотра: {e}")
+
+
+@router.callback_query(F.data.startswith("publish_all_"))
+async def cb_publish_all(callback: types.CallbackQuery) -> None:
+    """Handle one-click multi-platform publication callback."""
+    if not is_admin(callback.from_user):
+        await callback.answer("⛔️ Недостаточно прав.", show_alert=True)
+        return
+
+    target_date = callback.data.replace("publish_all_", "").strip()
+    await callback.answer("🚀 Запускаю изолированную автопубликацию...")
+
+    from pulse.db.client import get_supabase_client
+    client = get_supabase_client()
+
+    res = client.table("site_issues").select("*").eq("issue_date", target_date).execute()
+    rows = res.data or []
+    if not rows:
+        await callback.message.answer(f"⚠️ Выпуск на {target_date} не найден.")
+        return
+
+    row = rows[0]
+    image_path = row.get("image_path") or row.get("thumb480_path")
+    img_url = f"https://zyoznyeqvorhztrpgdjw.supabase.co/storage/v1/object/public/pulse-covers/{image_path}"
+    news_items = row.get("news") or []
+
+    await callback.message.answer(f"⏳ **Публикую выпуск за {target_date} во все соцсети...**")
+
+    orchestrator = MultiPublisherOrchestrator()
+    pub_results = await orchestrator.publish_all(
+        issue_date=target_date,
+        img_url=img_url,
+        news_items=news_items,
+        title=row.get("title"),
+    )
+
+    report_lines = [
+        f"🎉 **ВЫПУСК ОТ {target_date} УСПЕШНО ОПУБЛИКОВАН!**",
+        "",
+    ]
+
+    tg = pub_results.get("telegram", {})
+    if tg.get("success"):
+        report_lines.append(f"✅ **Telegram-канал:** [Перейти к посту]({tg['url']})")
+    else:
+        report_lines.append(f"❌ **Telegram-канал:** {tg.get('error')}")
+
+    vk = pub_results.get("vk", {})
+    if vk.get("success"):
+        report_lines.append(f"✅ **ВКонтакте:** [Перейти к посту]({vk['url']})")
+    else:
+        report_lines.append(f"❌ **ВКонтакте:** {vk.get('error')}")
+
+    site = pub_results.get("website", {})
+    if site.get("success"):
+        report_lines.append(f"✅ **Веб-сайт:** [Смотреть выпуск]({site['url']})")
+    else:
+        report_lines.append(f"❌ **Веб-сайт:** {site.get('error')}")
+
+    await callback.message.answer(
+        text="\n".join(report_lines),
+        parse_mode=ParseMode.MARKDOWN,
+        disable_web_page_preview=True,
+    )
