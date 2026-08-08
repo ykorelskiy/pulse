@@ -138,14 +138,18 @@ class SystemWatchdog:
         # 2. Feed Silence Check per enabled feed
         silent_feeds = self.check_feed_silence()
         current_silent_sids = {sid for sid, _, _ in silent_feeds}
+        
+        watchdog_log_path = Path("logs/watchdog_alerts.log")
+        watchdog_log_path.parent.mkdir(parents=True, exist_ok=True)
 
         for sid, sname, hrs in silent_feeds:
             alert_key_feed = f"feed_silence_{sid}"
             hrs_str = "более 24" if hrs > 24 else f"{hrs:.1f}"
-            err_msg = f"С RSS-ленты **«{sname}»** (ID: `{sid}`) уже **{hrs_str} ч.** не поступают новости!"
+            err_msg = f"С RSS-ленты «{sname}» (ID: {sid}) уже {hrs_str} ч. не поступают новости!"
             if self._should_send_alert(alert_key_feed, now_ts):
-                msg = f"⚠️ **Алерт источника:** {err_msg}"
-                notifications.append(msg)
+                log_msg = f"[{datetime.now().isoformat()}] ALERT: {err_msg}\n"
+                with open(watchdog_log_path, "a", encoding="utf-8") as f:
+                    f.write(log_msg)
                 self.state["active_alerts"][alert_key_feed] = err_msg
                 self.state["last_alert_times"][alert_key_feed] = now_ts
 
@@ -154,8 +158,9 @@ class SystemWatchdog:
         for k in prev_feed_alerts:
             sid = k.replace("feed_silence_", "")
             if sid not in current_silent_sids:
-                msg = f"✅ **Проблема устранена:** Поступление новостей с ленты `{sid}` восстановлено!"
-                notifications.append(msg)
+                log_msg = f"[{datetime.now().isoformat()}] RECOVERED: Поступление новостей с ленты {sid} восстановлено!\n"
+                with open(watchdog_log_path, "a", encoding="utf-8") as f:
+                    f.write(log_msg)
                 del self.state["active_alerts"][k]
 
         self._save_state()
