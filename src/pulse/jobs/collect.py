@@ -7,6 +7,7 @@ from pulse.config import get_config
 from pulse.db.repo import NewsRepo
 from pulse.digest.cluster import NewsClusterer
 from pulse.digest.llm import LLMCurator
+from pulse.digest.translator import is_english, translate_to_russian
 from pulse.logging import configure_logging, get_logger
 from pulse.sources.registry import SourceRegistry
 
@@ -37,6 +38,8 @@ async def process_pending_scoring(repo: NewsRepo, curator: LLMCurator, clusterer
 
                 has_victims = eval_res.get("has_victims", False)
                 ru_headline = eval_res.get("ru_headline") or item.get("headline", "")
+                if is_english(ru_headline):
+                    ru_headline = translate_to_russian(ru_headline)
 
                 if has_victims:
                     status = "rejected_victims"

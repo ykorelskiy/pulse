@@ -8,6 +8,7 @@ from typing import Any
 
 from pulse.config import get_config
 from pulse.db.repo import NewsRepo
+from pulse.digest.translator import is_english, translate_to_russian
 from pulse.sources.registry import SourceRegistry
 
 HARD_BAN_KEYWORDS = [
@@ -76,6 +77,8 @@ def build_diagnostic_payload() -> dict[str, Any]:
 
         headline_orig = (item.get("headline") or "").strip()
         ru_headline = (item.get("ru_headline") or headline_orig).strip()
+        if is_english(ru_headline):
+            ru_headline = translate_to_russian(ru_headline)
         has_victims = item.get("has_victims") or False
 
         # Ban reason check
