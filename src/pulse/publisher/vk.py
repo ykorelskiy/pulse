@@ -59,15 +59,14 @@ class VKPublisher:
                 url = item.get("url") or item.get("link", "")
 
                 if url:
-                    lines.append(f"{idx}. [{url}|{headline}]")
+                    lines.append(f"{idx}. {headline}\n🔗 {url}\n")
                 else:
-                    lines.append(f"{idx}. {headline}")
+                    lines.append(f"{idx}. {headline}\n")
         else:
-            lines.append("Ежедневный выпуск отрывного календаря.")
+            lines.append("Ежедневный выпуск отрывного календаря.\n")
 
-        lines.append("")
-        lines.append(f"📅 [{site_url}/{y}/{m}/{d}|Интерактивный календарь]")
-        lines.append("💬 [https://t.me/a_daily_pulse|Telegram-канал]")
+        lines.append(f"📅 Отрывной веб-календарь: {site_url}/{y}/{m}/{d}")
+        lines.append("💬 Telegram-канал: https://t.me/a_daily_pulse")
 
         return "\n".join(lines)
 
