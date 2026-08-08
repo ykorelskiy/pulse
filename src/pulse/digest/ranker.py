@@ -115,10 +115,13 @@ class TopicRanker:
 
             # Calculate Scores
             rel = item.get("relevance") or 3
-            comedic = item.get("comedic_potential") or 2
             sig = item.get("significance") or 2
-            tone = item.get("tone") or 0
-            quality_score = rel + comedic + sig + tone
+            virality = item.get("virality")
+            if virality is None:
+                comedic = item.get("comedic_potential") or 2
+                tone = item.get("tone") or 0
+                virality = (comedic * 2) if tone >= 0 else -comedic
+            quality_score = rel + sig + int(virality)
 
             cid = str(item.get("cluster_id") or item.get("id"))
             breadth_score = min(len(cluster_sources.get(cid, {sid})), 5)

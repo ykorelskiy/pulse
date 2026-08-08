@@ -79,19 +79,20 @@ class LLMCurator:
 
         prompt = (
             "Ты — главный редактор сатирического издания «Пульс дня».\n"
-            "Оцени список новостей по нескольким жестким критериям для формирования суточного ТОПа.\n\n"
+            "Оцени список новостей по жестким критериям для формирования суточного ТОПа.\n\n"
             "КРИТЕРИИ ОЦЕНКИ:\n"
-            "1. `ru_headline`: Заголовок на красивом грамотном русском языке. Переведи англоязычные заголовки!\n"
-            "2. `has_victims` (boolean): ЕСТЬ ЛИ В НОВОСТИ РЕАЛЬНЫЕ ПОГИБШИЕ, РАНЕНЫЕ, ТРАГЕДИИ ИЛИ НАСИЛИЕ?\n"
-            "   - Взрыв склада петард без пострадавших -> false.\n"
-            "   - Крушение, теракт, обстрел, гибель людей/детей -> true.\n"
-            "   - ПРАВИЛО НЕОПРЕДЕЛЕННОСТИ: Если из заголовка НЕЯСНО, есть ли пострадавшие — ставь true!\n"
+            "1. `ru_headline`: Заголовок на красивом грамотном русском языке. ОБЯЗАТЕЛЬНО ПЕРЕВЕДИ англоязычные заголовки (100% перевод)!\n"
+            "2. `has_victims` (boolean): ЕСТЬ ЛИ В НОВОСТИ РЕАЛЬНЫЕ ПОГИБШИЕ, РАНЕНЫЕ, ТЕРАКТЫ ИЛИ ФИЗИЧЕСКОЕ НАСИЛИЕ?\n"
+            "   - Реальная гибель людей, теракты, смертельные крушения -> true.\n"
+            "   - Новости про детей, соцсети, законы, образование, игры БЕЗ гибели/насилия -> СТРОГО false!\n"
             "3. `relevance` (1-5): Насколько новость интересна и понятна массовому читателю из РФ и СНГ.\n"
-            "4. `comedic_potential` (1-5): Потенциал абсурда, юмора, курьеза или неловкости (захочется переслать другу).\n"
-            "   - Природные бедствия, ураганы, наводнения, пожары и режимы ЧС НЕ ИМЕЮТ ЮМОРА (comedic_potential = 1)!\n"
-            "5. `significance` (1-5): Глобальный или общенациональный масштаб события.\n"
-            "6. `tone` (-1, 0, +1): Тон новости (-1 = гнетущая/мрачная, 0 = нейтральная, +1 = светлая/позитивная).\n"
-            "   - Для ЧП и бедствий (ураганы, режим ЧС) ставь tone = -1!\n\n"
+            "4. `significance` (1-5): Глобальный или общенациональный масштаб события.\n"
+            "5. `virality` (-10..+10): ВИРАЛЬНОСТЬ И ЖЕЛАНИЕ ПОДЕЛИТЬСЯ С ДРУЗЬЯМИ:\n"
+            "   - (+8 .. +10): Смешные курьёзы, невероятный абсурд, юмор («Индусы сушат дорогу вентиляторами», «Енот угнал машину»).\n"
+            "   - (+1 .. +7): Позитивные, добрые или любопытные новости.\n"
+            "   - (0): Сухой нейтральный официаз или ведомственный отчет.\n"
+            "   - (-1 .. -5): Бытовые проблемы, тревожные новости, ограничения, рост цен.\n"
+            "   - (-6 .. -10): Гнетущий негатив, стихийные бедствия, ураганы, наводнения, режим ЧС («Режим ЧС из-за урагана» = -8).\n\n"
             "Верни строго JSON-массив объектов следующей структуры:\n"
             "[\n"
             "  {\n"
@@ -99,9 +100,8 @@ class LLMCurator:
             '    "ru_headline": "Заголовок на русском",\n'
             '    "has_victims": false,\n'
             '    "relevance": 4,\n'
-            '    "comedic_potential": 5,\n'
             '    "significance": 2,\n'
-            '    "tone": 1\n'
+            '    "virality": 9\n'
             "  }\n"
             "]\n\n"
             f"Вот список новостей для оценки:\n{payload_json}"
@@ -130,6 +130,16 @@ class LLMCurator:
                         raw_text = data["candidates"][0]["content"]["parts"][0]["text"]
                         parsed = json.loads(raw_text)
                         if isinstance(parsed, list):
+                            for res in parsed:
+                                # Standardize virality / comedic mapping for backwards compatibility
+                                v = res.get("virality")
+                                if v is None:
+                                    c = res.get("comedic_potential", 2)
+                                    t = res.get("tone", 0)
+                                    v = (c * 2) if t >= 0 else -c
+                                res["virality"] = int(v)
+                                res["comedic_potential"] = max(1, min(5, int(v))) if v > 0 else 1
+                                res["tone"] = 1 if v > 0 else (-1 if v < 0 else 0)
                             logger.info("gemini_batch_scoring_success", model=model, count=len(parsed))
                             return parsed
                     elif response.status_code == 429:
@@ -162,18 +172,24 @@ class LLMCurator:
             is_viral = any(k in h.lower() for k in PRIORITY_VIRAL_KEYWORDS) and not is_disaster
 
             rel = 4 if not is_english(h) else 2
-            comedic = 1 if is_disaster else (5 if is_viral else 2)
             sig = 3 if is_disaster else 2
-            tone = -1 if (has_victims or is_disaster) else (1 if is_viral else 0)
+
+            if has_victims or is_disaster:
+                virality = -8 if is_disaster else -10
+            elif is_viral:
+                virality = 9
+            else:
+                virality = 0
 
             results.append({
                 "id": item_id,
                 "ru_headline": h,
                 "has_victims": has_victims,
                 "relevance": rel,
-                "comedic_potential": comedic,
                 "significance": sig,
-                "tone": tone,
+                "virality": virality,
+                "comedic_potential": max(1, virality) if virality > 0 else 1,
+                "tone": 1 if virality > 0 else (-1 if virality < 0 else 0),
             })
         return results
 

@@ -106,10 +106,16 @@ def build_diagnostic_payload() -> dict[str, Any]:
 
         # Scores calculation
         rel = item.get("relevance") or 0
-        comedic = item.get("comedic_potential") or 0
         sig = item.get("significance") or 0
-        tone = item.get("tone") or 0
-        quality_score = rel + comedic + sig + tone if status == "scored" else 0
+        virality = item.get("virality")
+        if virality is None:
+            comedic = item.get("comedic_potential") or 0
+            tone = item.get("tone") or 0
+            virality = (comedic * 2) if tone >= 0 else -comedic
+        else:
+            virality = int(virality)
+
+        quality_score = rel + sig + virality if status == "scored" else 0
 
         cid = str(item.get("cluster_id") or item.get("id"))
         breadth_score = min(len(cluster_sources.get(cid, {sid})), 5)
@@ -139,9 +145,8 @@ def build_diagnostic_payload() -> dict[str, Any]:
             "status_flag": status_flag,
             "ban_reason": ban_reason,
             "relevance": rel,
-            "comedic_potential": comedic,
             "significance": sig,
-            "tone": tone,
+            "virality": virality,
             "quality_score": quality_score,
             "breadth_score": breadth_score,
             "freshness_score": freshness_score,
@@ -474,10 +479,9 @@ DASHBOARD_HTML_TEMPLATE = """<!DOCTYPE html>
                                 ${art.headline_orig !== art.ru_headline ? `<div class="orig-title">${art.headline_orig}</div>` : ''}
                             </td>
                             <td title="Релевантность (1-5)">${art.relevance}</td>
-                            <td title="Потенциал юмора/абсурда (1-5)">${art.comedic_potential}</td>
                             <td title="Общая значимость (1-5)">${art.significance}</td>
-                            <td title="Тон (-1/0/+1)">${art.tone}</td>
-                            <td class="score-val" title="Сумма базовых оценок">${art.quality_score}</td>
+                            <td title="Виральность и юмор (-10..+10)" class="score-val" style="color: ${art.virality > 0 ? '#4ade80' : (art.virality < 0 ? '#fca5a5' : '#cbd5e1')}">${art.virality > 0 ? '+' + art.virality : art.virality}</td>
+                            <td class="score-val" title="Сумма базовых оценок (Rel + Sig + Virality)">${art.quality_score}</td>
                             <td title="Балл за число СМИ в кластере (0-5)">${art.breadth_score}</td>
                             <td title="Балл за свежесть (0-6)">${art.freshness_score}</td>
                             <td class="score-val" style="color: var(--accent-blue); font-size: 14px;">${art.total_score}</td>
@@ -492,19 +496,18 @@ DASHBOARD_HTML_TEMPLATE = """<!DOCTYPE html>
                             <tr>
                                 <th>#</th>
                                 <th>Заголовок новости</th>
-                                <th title="Релевантность для читателя">Релевантность</th>
-                                <th title="Юмор и абсурдность">Юмор</th>
-                                <th title="Масштаб и значимость">Значимость</th>
-                                <th title="Тональность новости">Тон</th>
-                                <th title="Качество (Сумма)">Качество</th>
-                                <th title="Охват в СМИ">Охват (СМИ)</th>
-                                <th title="Свежесть новости">Свежесть</th>
+                                <th title="Релевантность для читателя (1-5)">Релевантность</th>
+                                <th title="Масштаб и значимость (1-5)">Значимость</th>
+                                <th title="Виральность, юмор и позитив (-10..+10)">Виральность (-10..+10)</th>
+                                <th title="Качество (Rel + Sig + Virality)">Качество</th>
+                                <th title="Охват в СМИ (0-5)">Охват (СМИ)</th>
+                                <th title="Свежесть новости (0-6)">Свежесть</th>
                                 <th title="Итоговый балл ранжирования (по убыванию)">Итоговый балл ⬇️</th>
                                 <th>Статус / Причина</th>
                             </tr>
                         </thead>
                         <tbody>
-                            ${rowsHtml || '<tr><td colspan="11" style="text-align:center; color: var(--text-muted);">Нет новостей по фильтру</td></tr>'}
+                            ${rowsHtml || '<tr><td colspan="10" style="text-align:center; color: var(--text-muted);">Нет новостей по фильтру</td></tr>'}
                         </tbody>
                     </table>
                 `;

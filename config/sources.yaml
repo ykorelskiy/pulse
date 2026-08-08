@@ -1,25 +1,25 @@
 sources:
-  # Категория А: RU — главные ленты и ТОП-агрегаторы (20%)
+  # Категория А: RU — главные ленты и ТОП-агрегаторы
   - id: yandex_news
     name: "Интерфакс — Главные новости"
     url: "https://www.interfax.ru/rss.asp"
     category: "ru_news"
     weight: 0.20
-    enabled: true
+    enabled: false
 
   - id: rambler_news
     name: "Рамблер Новости — Главные события"
     url: "https://news.rambler.ru/rss/head/"
     category: "ru_news"
     weight: 0.20
-    enabled: true
+    enabled: false
 
   - id: rbc_news
     name: "РБК — Главные новости"
     url: "https://rssexport.rbc.ru/rbcnews/news/30/full.rss"
     category: "ru_news"
     weight: 0.20
-    enabled: true
+    enabled: false
 
   - id: lenta_news
     name: "Лента.ру — Новости"
@@ -33,37 +33,37 @@ sources:
     url: "https://ria.ru/export/rss2/archive/index.xml"
     category: "ru_news"
     weight: 0.20
-    enabled: true
+    enabled: false
 
   - id: rt_russian
     name: "RT на русском — Главные новости"
     url: "https://russian.rt.ru/rss"
     category: "ru_news"
     weight: 0.20
-    enabled: true
+    enabled: false
 
   - id: gazeta_politics
     name: "Газета.Ru — Политика"
     url: "https://www.gazeta.ru/export/rss/politics.xml"
     category: "ru_news"
     weight: 0.20
-    enabled: true
+    enabled: false
 
   - id: tass_news
     name: "ТАСС — Главные новости"
     url: "https://tass.ru/rss/v2.xml"
     category: "ru_news"
     weight: 0.20
-    enabled: true
+    enabled: false
 
   - id: kommersant_news
     name: "Коммерсантъ — Новости"
     url: "https://www.kommersant.ru/RSS/news.xml"
     category: "ru_news"
     weight: 0.20
-    enabled: true
+    enabled: false
 
-  # Категория Б: RU — «горячее»/скандальное/таблоид/эксклюзивы (30%)
+  # Категория Б: RU — «горячее»/скандальное/таблоид/эксклюзивы
   - id: mash_telegram
     name: "Mash — Эксклюзивы и расследования"
     type: "telegram"
@@ -80,7 +80,7 @@ sources:
     url: "https://t.me/s/fontankaspb"
     category: "ru_hot"
     weight: 0.30
-    enabled: true
+    enabled: false
 
   - id: readovka_telegram
     name: "Readovka — Острые темы"
@@ -112,14 +112,14 @@ sources:
     url: "https://www.starhit.ru/rss/"
     category: "ru_hot"
     weight: 0.30
-    enabled: true
+    enabled: false
 
   - id: sevendays_showbiz
     name: "7Дней.ру — Скандалы и шоу-бизнес"
     url: "https://7days.ru/rss"
     category: "ru_hot"
     weight: 0.30
-    enabled: true
+    enabled: false
 
   - id: kp_all
     name: "Комсомольская правда — Происшествия и скандалы"
@@ -128,54 +128,53 @@ sources:
     url: "https://t.me/s/kpru"
     category: "ru_hot"
     weight: 0.30
-    enabled: true
+    enabled: false
 
-  # Категория Ж: Спорт (10%)
+  # Категория Ж: Спорт
   - id: sports_ru
     name: "Sports.ru — Главные новости спорта"
     url: "https://www.sports.ru/rss/all_news.xml"
     category: "sports"
     weight: 0.10
-    enabled: true
-
+    enabled: false
 
   - id: championat_com
     name: "Чемпионат — Главное в спорте"
     url: "https://www.championat.com/rss/news/"
     category: "sports"
     weight: 0.10
-    enabled: true
+    enabled: false
 
   - id: match_tv
     name: "Матч ТВ — Новости спорта"
     url: "https://matchtv.ru/news/rss"
     category: "sports"
     weight: 0.10
-    enabled: true
+    enabled: false
 
   - id: rbc_sport
     name: "Спорт-Экспресс — Главные новости спорта"
     url: "https://www.sport-express.ru/services/materials/news/se/"
     category: "sports"
     weight: 0.10
-    enabled: true
+    enabled: false
 
-  # Категория В: Международные курьёзы/таблоиды (15%)
+  # Категория В: Международные курьёзы/таблоиды
   - id: tmz_gossip
     name: "TMZ — Entertainment & Celebrity News"
     url: "https://www.tmz.com/rss.xml"
     category: "world_tabloid"
     weight: 0.15
-    enabled: true
+    enabled: false
 
   - id: pagesix_gossip
     name: "Page Six — Celebrity Gossip"
     url: "https://pagesix.com/feed"
     category: "world_tabloid"
     weight: 0.15
-    enabled: true
+    enabled: false
 
-  # Категория Г: Мировая политика (ОТКЛЮЧЕНА по требованию автора)
+  # Категория Г: Мировая политика
   - id: bbc_world
     name: "BBC News — World"
     url: "https://feeds.bbci.co.uk/news/world/rss.xml"
@@ -190,31 +189,31 @@ sources:
     weight: 0.00
     enabled: false
 
-  # Категория Д: Сигнал вирусности (Google Trends & Reddit, 20%)
+  # Категория Д: Сигнал вирусности
   - id: google_trends_ru
     name: "Google Trends Russia"
     url: "https://trends.google.com/trending/rss?geo=RU"
     category: "viral_trends"
     weight: 0.20
-    enabled: true
+    enabled: false
 
   - id: reddit_nottheonion
     name: "Reddit — r/nottheonion"
     url: "https://www.reddit.com/r/nottheonion/.rss"
     category: "viral_trends"
     weight: 0.20
-    enabled: true
+    enabled: false
 
-  # Категория Е: Технологии и наука (5%)
+  # Категория Е: Технологии и наука
   - id: habr_top
     name: "Хабр — Лучшее за сутки"
     url: "https://habr.com/ru/rss/best/daily/?fl=ru"
     category: "tech"
     weight: 0.05
-    enabled: true
+    enabled: false
 
   - id: techcrunch
-    name: "TechCrunch"
+    name: "TechCrunch — Новости технологий"
     url: "https://techcrunch.com/feed"
     category: "tech"
     weight: 0.05
