@@ -1,0 +1,15 @@
+[Unit]
+Description=Pulse Tear-Off Calendar Showcase Website (Port 8081)
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/var/www/pulse
+ExecStart=/var/www/pulse/.venv/bin/python -m pulse.web.site_server
+Restart=always
+RestartSec=5
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=multi-user.target
