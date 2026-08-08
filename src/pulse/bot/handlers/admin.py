@@ -175,3 +175,59 @@ async def handle_photo_cover_upload(message: types.Message, bot: Bot) -> None:
         )
     except Exception as e:
         await message.answer(f"❌ Ошибка при публикации картинки: {e}")
+
+
+@router.message(Command("post"))
+@router.message(Command("preview_post"))
+async def cmd_preview_post(message: types.Message) -> None:
+    """Send channel post preview (photo + formatted text) to admin."""
+    if not is_admin(message.from_user):
+        return
+
+    text = message.text or ""
+    parts = text.strip().split()
+    target_date = None
+    if len(parts) > 1 and len(parts[1]) == 10 and parts[1][4] == "-" and parts[1][7] == "-":
+        target_date = parts[1]
+
+    from pulse.publisher.site_publisher import get_msk_today
+    if not target_date:
+        target_date = get_msk_today()
+
+    from pulse.db.client import get_supabase_client
+    client = get_supabase_client()
+
+    try:
+        res = client.table("site_issues").select("*").eq("issue_date", target_date).execute()
+        rows = res.data or []
+        if not rows:
+            await message.answer(
+                f"⚠️ **Выпуск на {target_date} еще не сформирован!**\n\n"
+                f"Отправьте боту изображение с подписью, чтобы создать выпуск."
+            )
+            return
+
+        row = rows[0]
+        image_path = row.get("thumb480_path") or row.get("image_path")
+        if not image_path:
+            await message.answer(f"⚠️ Для даты {target_date} нет загруженного изображения.")
+            return
+
+        from pulse.publisher.caption import CaptionBuilder
+        builder = CaptionBuilder()
+        caption = builder.build_caption(
+            date_str=target_date,
+            title=row.get("title"),
+            news_items=row.get("news") or [],
+        )
+
+        from pulse.lib.supabase import get_public_storage_url
+        img_url = f"https://zyoznyeqvorhztrpgdjw.supabase.co/storage/v1/object/public/pulse-covers/{image_path}"
+
+        await message.answer_photo(
+            photo=img_url,
+            caption=caption,
+            parse_mode="Markdown",
+        )
+    except Exception as e:
+        await message.answer(f"❌ Ошибка при подготовке поста: {e}")

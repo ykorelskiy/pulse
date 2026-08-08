@@ -1,15 +1,57 @@
-"""Post caption builder."""
+"""Post caption builder for Telegram channel."""
+
+from datetime import datetime
+import zoneinfo
+
+MSK_TZ = zoneinfo.ZoneInfo("Europe/Moscow")
 
 
 class CaptionBuilder:
-    """Builds channel post captions including winner attribution and tags."""
+    """Builds channel post captions including daily top news and site links."""
 
     def build_caption(
-        self, date_str: str, winner_username: str | None = None
+        self,
+        date_str: str,
+        title: str | None = None,
+        news_items: list[dict] | None = None,
+        site_url: str = "http://192.109.206.42:8081",
     ) -> str:
-        """Build formatted Telegram post caption.
+        """Build formatted Telegram channel post caption.
+
+        Args:
+            date_str: Date string YYYY-MM-DD.
+            title: Title of issue.
+            news_items: List of news item dicts.
+            site_url: Public showcase website URL.
 
         Returns:
             str: Telegram post caption text.
         """
-        raise NotImplementedError
+        dt = datetime.strptime(date_str, "%Y-%m-%d")
+        formatted_date = dt.strftime("%d.%m.%Y")
+        [year, month, day] = date_str.split("-")
+
+        lines = []
+        lines.append(f"🖼 **ПУЛЬС ДНЯ — {formatted_date}**")
+        lines.append("")
+        lines.append("📌 **Главное за день:**")
+
+        if news_items:
+            # Format top 5-7 news items for channel post
+            for idx, item in enumerate(news_items[:7], 1):
+                text = item.get("text", "")
+                url = item.get("url", "")
+                if url:
+                    lines.append(f"{idx}. [{text}]({url})")
+                else:
+                    lines.append(f"{idx}. {text}")
+        else:
+            lines.append("Ежедневный выпуск отрывного календаря.")
+
+        lines.append("")
+        lines.append(f"📅 **Смотреть отрывной календарь на сайте:**")
+        lines.append(f"👉 [{site_url}/{year}/{month}/{day}]({site_url}/{year}/{month}/{day})")
+        lines.append("")
+        lines.append("💬 **Подписаться:** @a_daily_pulse")
+
+        return "\n".join(lines)
