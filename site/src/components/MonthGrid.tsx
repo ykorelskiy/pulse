@@ -126,7 +126,7 @@ export const MonthGrid: React.FC<MonthGridProps> = ({
                 redDate ? "red-date" : ""
               }`}
               onClick={() => {
-                if (cell.state === "published" || cell.state === "empty_past") {
+                if (cell.state !== "future") {
                   onSelectDate(cell.dateStr);
                 }
               }}

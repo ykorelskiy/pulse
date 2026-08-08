@@ -101,7 +101,7 @@ export const CalendarSheet: React.FC<CalendarSheetProps> = ({
 
         {/* Footer info or News placeholder */}
         <div className="sheet-footer">
-          <div className="sheet-brand-label">ПУЛЬС ДНЯ — ЕЖЕДНЕВНЫЙ ОТРИВНОЙ КАЛЕНДАРЬ</div>
+          <div className="sheet-brand-label">ПУЛЬС ДНЯ — ЕЖЕДНЕВНЫЙ ОТРЫВНОЙ КАЛЕНДАРЬ</div>
         </div>
       </div>
     </div>
