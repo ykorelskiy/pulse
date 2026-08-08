@@ -40,7 +40,7 @@ def build_diagnostic_payload() -> dict[str, Any]:
             "articles": [],
         }
 
-    raw_items = repo.get_diagnostic_24h_full_data()
+    raw_items = [i for i in repo.get_diagnostic_24h_full_data() if str(i.get("source_id")) in source_map]
     now = datetime.now(timezone.utc)
 
     # First pass: cluster breadth count

@@ -59,24 +59,18 @@ class TopicRanker:
                     "in_top_10": 0,
                 }
 
-        # Audit stats: count ALL collected items (any status) for accurate reporting
-        all_24h_items = self.news_repo.get_all_24h_news()
+        # Audit stats: count items ONLY from active enabled sources
+        all_24h_items = [i for i in self.news_repo.get_all_24h_news() if str(i.get("source_id")) in source_map]
         for item in all_24h_items:
             sid = str(item.get("source_id") or "news")
             sname = source_map.get(sid, sid)
-            if sname not in source_stats_map:
-                source_stats_map[sname] = {
-                    "name": sname,
-                    "analyzed": 0,
-                    "in_top_50": 0,
-                    "in_top_10": 0,
-                }
-            source_stats_map[sname]["analyzed"] += 1
+            if sname in source_stats_map:
+                source_stats_map[sname]["analyzed"] += 1
 
-        # Ranking: only use scored items (evaluated by LLM)
-        raw_items = self.news_repo.get_scored_24h_news()
+        # Ranking: only use scored items from active enabled sources
+        raw_items = [i for i in self.news_repo.get_scored_24h_news() if str(i.get("source_id")) in source_map]
         if not raw_items:
-            raw_items = self.news_repo.get_latest_news(limit=200)
+            raw_items = [i for i in self.news_repo.get_latest_news(limit=200) if str(i.get("source_id")) in source_map]
 
         now = datetime.now(timezone.utc)
 
