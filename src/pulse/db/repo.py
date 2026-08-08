@@ -347,6 +347,35 @@ class NewsRepo(BaseRepo):
             pass
         return []
 
+    def get_diagnostic_24h_full_data(self) -> list[dict[str, Any]]:
+        """Fetch ALL full news items from floating last 24 hours with select('*') and pagination."""
+        if not self.client:
+            return []
+        try:
+            from datetime import timedelta
+            since_iso = (datetime.now(timezone.utc) - timedelta(hours=24)).isoformat()
+            all_items: list[dict[str, Any]] = []
+            page_size = 1000
+            offset = 0
+            while True:
+                res = (
+                    self.client.table("news_items")
+                    .select("*")
+                    .gte("collected_at", since_iso)
+                    .order("collected_at", desc=True)
+                    .range(offset, offset + page_size - 1)
+                    .execute()
+                )
+                items = getattr(res, "data", []) or []
+                all_items.extend(items)
+                if len(items) < page_size:
+                    break
+                offset += page_size
+            return all_items
+        except Exception:
+            pass
+        return []
+
     def update_scored_article(self, article_id: str, update_data: dict[str, Any]) -> None:
         """Update scored article fields in Supabase."""
         if not self.client:

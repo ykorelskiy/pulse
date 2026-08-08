@@ -1,0 +1,14 @@
+[Unit]
+Description=Pulse News Diagnostic Dashboard Web Server
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/var/www/pulse
+ExecStart=/var/www/pulse/.venv/bin/python -m pulse.web.dashboard
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
