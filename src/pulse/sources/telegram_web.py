@@ -30,10 +30,10 @@ class TelegramChannelAdapter(BaseSourceAdapter):
         self.category = category
 
     async def fetch_latest(self) -> list[NewsArticle]:
-        """Fetch latest posts from Telegram public web preview with exact post URLs.
+        """Fetch latest posts from Telegram public web preview with accurate chunk post matching.
 
         Returns:
-            list[NewsArticle]: Parsed news articles with direct post URLs (https://t.me/channel/id).
+            list[NewsArticle]: Parsed news articles with direct post URLs (https://t.me/s/channel/id).
         """
         articles: list[NewsArticle] = []
         try:
@@ -45,24 +45,30 @@ class TelegramChannelAdapter(BaseSourceAdapter):
 
                 raw_html = resp.text
 
-                # Find all message blocks with data-post attribute
-                blocks = re.findall(
-                    r'<div class="tgme_widget_message [^"]*"[^>]*data-post="([^"]+)"[^>]*>(.*?)</div>\s*</div>\s*</div>\s*</div>',
-                    raw_html,
-                    re.DOTALL,
-                )
+                # Find all occurrences of data-post="channel/post_id"
+                post_positions = [m.start() for m in re.finditer(r'data-post="', raw_html)]
+                if not post_positions:
+                    return []
 
-                for post_id, block_html in blocks:
+                for i in range(len(post_positions)):
+                    start = post_positions[i]
+                    end = post_positions[i + 1] if i + 1 < len(post_positions) else len(raw_html)
+                    chunk = raw_html[start:end]
+
+                    post_id_match = re.search(r'data-post="([^"]+)"', chunk)
+                    if not post_id_match:
+                        continue
+                    post_id = post_id_match.group(1)
+
                     text_match = re.search(
-                        r'<div class="tgme_widget_message_text js-message_text[^"]*"[^>]*>(.*?)</div>',
-                        block_html,
+                        r'class="[^"]*tgme_widget_message_text[^\"]*"[^>]*>(.*?)</div>',
+                        chunk,
                         re.DOTALL,
                     )
                     if not text_match:
                         continue
 
-                    raw_text = text_match.group(1)
-                    clean_text = re.sub(r"<[^>]+>", " ", raw_text)
+                    clean_text = re.sub(r"<[^>]+>", " ", text_match.group(1))
                     clean_text = " ".join(clean_text.split()).strip()
                     if not clean_text or len(clean_text) < 15:
                         continue
@@ -74,7 +80,7 @@ class TelegramChannelAdapter(BaseSourceAdapter):
                         headline = f"{headline}. {parts[1].strip()}"
                     headline = headline[:150]
 
-                    # Exact web preview URL to specific Telegram post: https://t.me/s/readovkanews/113658
+                    # Direct web preview URL to specific Telegram post: https://t.me/s/readovkanews/113665
                     direct_post_url = f"https://t.me/s/{post_id}"
 
                     articles.append(
