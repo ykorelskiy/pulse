@@ -34,7 +34,7 @@ class VKPublisher:
         news_items: list[dict[str, Any]],
         site_url: str = "http://192.109.206.42:8081",
     ) -> str:
-        """Format 15 news items with clickable source links for VK wall post.
+        """Format 15 news items with embedded text links [URL|Title] for VK wall post.
 
         Args:
             date_str: Date string YYYY-MM-DD.
@@ -51,23 +51,23 @@ class VKPublisher:
             f"🖼 ПУЛЬС ДНЯ — {formatted_date}",
             "",
             "📌 Главные позитивные новости дня:",
-            "",
         ]
 
         if news_items:
             for idx, item in enumerate(news_items[:15], 1):
                 headline = item.get("text") or item.get("ru_headline") or item.get("headline", "")
                 url = item.get("url") or item.get("link", "")
-                
-                if url:
-                    lines.append(f"{idx}. {headline}\n🔗 {url}\n")
-                else:
-                    lines.append(f"{idx}. {headline}\n")
-        else:
-            lines.append("Ежедневный выпуск отрывного календаря.\n")
 
-        lines.append(f"📅 Интерактивный календарь: {site_url}/{y}/{m}/{d}")
-        lines.append("💬 Telegram-канал: https://t.me/a_daily_pulse")
+                if url:
+                    lines.append(f"{idx}. [{url}|{headline}]")
+                else:
+                    lines.append(f"{idx}. {headline}")
+        else:
+            lines.append("Ежедневный выпуск отрывного календаря.")
+
+        lines.append("")
+        lines.append(f"📅 [{site_url}/{y}/{m}/{d}|Интерактивный календарь]")
+        lines.append("💬 [https://t.me/a_daily_pulse|Telegram-канал]")
 
         return "\n".join(lines)
 
