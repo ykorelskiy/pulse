@@ -123,6 +123,7 @@ export function App() {
       {/* Navbar Header */}
       <header className="top-navbar">
         <div className="brand-title">
+          <img src="/robot-mascot.jpg" alt="Робот Пульс Дня" className="nav-robot-avatar" />
           <span>ПУЛЬС ДНЯ</span>
           <span className="brand-badge">2026</span>
         </div>

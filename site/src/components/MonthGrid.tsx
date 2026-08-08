@@ -135,22 +135,21 @@ export const MonthGrid: React.FC<MonthGridProps> = ({
               {isSelected && (
                 <svg className="handwritten-circle-svg" viewBox="0 0 100 100" preserveAspectRatio="none">
                   <path
-                    d="M 15 50 C 12 25, 30 10, 55 12 C 80 14, 92 32, 88 58 C 84 82, 60 92, 35 88 C 15 84, 8 62, 20 45"
+                    d="M 10 48 C 6 18, 28 4, 55 6 C 84 8, 96 26, 94 56 C 92 84, 64 96, 32 94 C 10 90, 4 64, 16 42"
                     fill="none"
                     stroke="#dc2626"
-                    strokeWidth="4.5"
+                    strokeWidth="5"
                     strokeLinecap="round"
-                    strokeDasharray="120"
                     className="crayon-stroke-path"
                   />
                 </svg>
               )}
 
-              {/* Hand-drawn graphite pencil cross for empty past dates */}
+              {/* Hand-drawn rough RED pencil cross for empty past dates */}
               {cell.state === "empty_past" && (
-                <svg className="pencil-cross-svg" viewBox="0 0 40 40">
-                  <line x1="8" y1="8" x2="32" y2="32" stroke="#64748b" strokeWidth="2.5" strokeLinecap="round" opacity="0.6" />
-                  <line x1="32" y1="8" x2="8" y2="32" stroke="#64748b" strokeWidth="2.5" strokeLinecap="round" opacity="0.6" />
+                <svg className="pencil-cross-svg" viewBox="0 0 100 100" preserveAspectRatio="none">
+                  <path d="M 14 16 Q 48 50 86 84" fill="none" stroke="#dc2626" strokeWidth="4.5" strokeLinecap="round" opacity="0.85" />
+                  <path d="M 84 18 Q 52 48 16 82" fill="none" stroke="#dc2626" strokeWidth="4.5" strokeLinecap="round" opacity="0.85" />
                 </svg>
               )}
 

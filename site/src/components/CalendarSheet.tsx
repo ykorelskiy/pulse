@@ -91,9 +91,9 @@ export const CalendarSheet: React.FC<CalendarSheetProps> = ({
             </div>
           ) : (
             <div className="cover-placeholder">
-              <div className="placeholder-logo">ПУЛЬС ДНЯ</div>
+              <img src="/robot-mascot.jpg" alt="Робот Пульс Дня" className="mascot-placeholder-img" />
               <div className="placeholder-text">
-                {currentDateStr.endsWith("08-08") ? "Выпуск загружается..." : "В этот день выпуска не было"}
+                {currentDateStr.endsWith("08-08") ? "Робот зарисовывает сегодня..." : "В этот день выпуска не было"}
               </div>
             </div>
           )}

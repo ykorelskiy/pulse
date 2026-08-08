@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Marck+Script&family=Neucha&family=Playfair+Display:ital,wght@0,700;0,800;1,700&family=Source+Sans+3:wght@400;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Marck+Script&family=Neucha&family=Source+Sans+3:wght@400;600;700&display=swap');
 
 :root {
   --bg-dark: #120c08;
@@ -6,13 +6,12 @@
   --paper-bg-secondary: #f4ecda;
   --paper-text: #221c17;
   --paper-muted: #6e6255;
-  --accent-crimson: #c92a2a;
+  --accent-crimson: #dc2626;
   --accent-gold: #c5862b;
   --accent-brass: #d99b38;
   --border-dark: #3a2e24;
-  --font-serif: 'Playfair Display', Georgia, serif;
+  --font-handwriting: 'Neucha', 'Caveat', 'Marck Script', cursive;
   --font-sans: 'Source Sans 3', sans-serif;
-  --font-handwriting: 'Caveat', 'Marck Script', 'Neucha', cursive;
 }
 
 * {
@@ -22,7 +21,7 @@
 }
 
 body {
-  font-family: var(--font-sans);
+  font-family: var(--font-handwriting);
   background: #0f0b08 url('/bg-wood.jpg') no-repeat center center fixed;
   background-size: cover;
   color: #f3ebd9;
@@ -36,9 +35,9 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 16px 36px;
-  background: rgba(18, 12, 8, 0.85);
-  border-bottom: 1px solid rgba(197, 134, 43, 0.3);
+  padding: 14px 36px;
+  background: rgba(18, 12, 8, 0.88);
+  border-bottom: 1px solid rgba(197, 134, 43, 0.35);
   backdrop-filter: blur(12px);
   position: sticky;
   top: 0;
@@ -46,22 +45,31 @@ body {
 }
 
 .brand-title {
-  font-family: var(--font-serif);
-  font-size: 28px;
-  font-weight: 800;
-  letter-spacing: -0.01em;
+  font-family: 'Neucha', cursive;
+  font-size: 32px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
   color: #fbf5e6;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
   text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
 }
 
+.nav-robot-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 2px solid #38bdf8;
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.6);
+  object-fit: cover;
+}
+
 .brand-badge {
-  font-family: var(--font-handwriting);
-  font-size: 18px;
+  font-family: 'Caveat', cursive;
+  font-size: 20px;
   font-weight: 700;
-  padding: 2px 10px;
+  padding: 2px 12px;
   border-radius: 20px;
   background: var(--accent-crimson);
   color: #fff;
@@ -104,14 +112,14 @@ body {
   width: 52px;
   height: 52px;
   border-radius: 50%;
-  background: rgba(30, 20, 12, 0.85);
+  background: rgba(30, 20, 12, 0.88);
   border: 1px solid var(--accent-gold);
   color: var(--accent-gold);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: all 0.25 ease;
+  transition: all 0.25s ease;
   backdrop-filter: blur(6px);
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.6);
 }
@@ -153,7 +161,6 @@ body {
   transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease;
 }
 
-/* Layered Paper Stack Effects Behind Sheet */
 .paper-sheet::before {
   content: '';
   position: absolute;
@@ -227,12 +234,11 @@ body {
 }
 
 .sheet-day-num {
-  font-family: var(--font-serif);
-  font-size: 80px;
-  font-weight: 800;
+  font-family: 'Neucha', cursive;
+  font-size: 88px;
+  font-weight: 700;
   line-height: 0.85;
   color: var(--paper-text);
-  letter-spacing: -0.03em;
 }
 
 .sheet-date-text {
@@ -241,25 +247,24 @@ body {
 }
 
 .sheet-month-year {
-  font-family: var(--font-serif);
-  font-size: 26px;
+  font-family: 'Neucha', cursive;
+  font-size: 32px;
   font-weight: 700;
   color: var(--paper-text);
-  letter-spacing: 0.05em;
+  letter-spacing: 0.02em;
 }
 
 .sheet-weekday {
-  font-family: var(--font-handwriting);
-  font-size: 24px;
+  font-family: 'Caveat', cursive;
+  font-size: 26px;
   font-weight: 700;
   color: var(--paper-muted);
-  letter-spacing: 0.05em;
-  margin-top: -2px;
+  margin-top: -4px;
 }
 
 .week-badge {
-  font-family: var(--font-handwriting);
-  font-size: 19px;
+  font-family: 'Caveat', cursive;
+  font-size: 22px;
   font-weight: 700;
   background: #eadecd;
   color: #5c4e3e;
@@ -312,8 +317,8 @@ body {
   opacity: 0;
   transition: opacity 0.25s ease;
   color: #fff;
-  font-family: var(--font-handwriting);
-  font-size: 22px;
+  font-family: 'Neucha', cursive;
+  font-size: 26px;
   font-weight: 700;
 }
 
@@ -322,7 +327,7 @@ body {
 }
 
 .cover-placeholder {
-  height: 400px;
+  height: 380px;
   background: #eae0c8;
   border: 2px dashed #baaa8a;
   border-radius: 6px;
@@ -330,22 +335,24 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 16px;
   color: var(--paper-muted);
 }
 
-.placeholder-logo {
-  font-family: var(--font-serif);
-  font-size: 40px;
-  font-weight: 800;
-  letter-spacing: 0.1em;
-  margin-bottom: 12px;
-  color: var(--paper-muted);
+.mascot-placeholder-img {
+  width: 130px;
+  height: 130px;
+  border-radius: 50%;
+  border: 3px solid #38bdf8;
+  box-shadow: 0 0 20px rgba(56, 189, 248, 0.5);
+  object-fit: cover;
 }
 
 .placeholder-text {
-  font-family: var(--font-handwriting);
-  font-size: 24px;
+  font-family: 'Neucha', cursive;
+  font-size: 28px;
   font-weight: 700;
+  color: #4a3e31;
 }
 
 .sheet-footer {
@@ -356,8 +363,8 @@ body {
 }
 
 .sheet-brand-label {
-  font-family: var(--font-handwriting);
-  font-size: 18px;
+  font-family: 'Caveat', cursive;
+  font-size: 20px;
   font-weight: 700;
   letter-spacing: 0.08em;
   color: var(--paper-muted);
@@ -367,8 +374,8 @@ body {
 /* Right Zone: Vintage Month Desk Calendar                       */
 /* ------------------------------------------------------------- */
 .month-grid-container {
-  background: rgba(22, 15, 10, 0.92);
-  border: 1px solid rgba(197, 134, 43, 0.35);
+  background: rgba(22, 15, 10, 0.94);
+  border: 1px solid rgba(197, 134, 43, 0.4);
   border-radius: 12px;
   padding: 28px;
   box-shadow: 0 20px 45px rgba(0, 0, 0, 0.7);
@@ -394,15 +401,16 @@ body {
   align-items: center;
   margin-bottom: 24px;
   padding-bottom: 14px;
-  border-bottom: 1px dashed rgba(197, 134, 43, 0.3);
+  border-bottom: 1px dashed rgba(197, 134, 43, 0.35);
 }
 
 .month-title {
-  font-family: var(--font-serif);
-  font-size: 26px;
+  font-family: 'Neucha', cursive;
+  font-size: 36px;
   font-weight: 700;
   color: var(--accent-brass);
   text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+  letter-spacing: 0.03em;
 }
 
 .month-nav-btn {
@@ -439,10 +447,10 @@ body {
 }
 
 .weekday-label {
-  font-family: var(--font-sans);
-  font-size: 13px;
+  font-family: 'Neucha', cursive;
+  font-size: 20px;
   font-weight: 700;
-  color: #a89a8a;
+  color: #c4b5a3;
   letter-spacing: 0.05em;
 }
 
@@ -481,7 +489,7 @@ body {
   transform: scale(1.08);
   border-color: var(--accent-brass);
   box-shadow: 0 0 16px rgba(217, 155, 56, 0.6);
-  z-index: 20;
+  z-index: 30;
 }
 
 .day-cell.cell-future {
@@ -492,11 +500,12 @@ body {
 /* Hand-drawn Overlays */
 .handwritten-circle-svg {
   position: absolute;
-  inset: -6px;
-  width: calc(100% + 12px);
-  height: calc(100% + 12px);
+  inset: -8px;
+  width: calc(100% + 16px);
+  height: calc(100% + 16px);
   pointer-events: none;
-  z-index: 15;
+  z-index: 25;
+  overflow: visible;
 }
 
 .pencil-cross-svg {
@@ -506,6 +515,7 @@ body {
   height: 100%;
   pointer-events: none;
   z-index: 10;
+  overflow: visible;
 }
 
 .cell-thumb-wrapper {
@@ -526,9 +536,10 @@ body {
   position: absolute;
   top: 4px;
   left: 4px;
-  background: rgba(0, 0, 0, 0.8);
+  background: rgba(0, 0, 0, 0.85);
   color: #fff;
-  font-size: 11px;
+  font-family: 'Neucha', cursive;
+  font-size: 15px;
   font-weight: 700;
   padding: 1px 6px;
   border-radius: 4px;
@@ -543,12 +554,12 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2px;
+  gap: 0;
 }
 
 .cell-day-num {
-  font-family: var(--font-serif);
-  font-size: 16px;
+  font-family: 'Neucha', cursive;
+  font-size: 24px;
   font-weight: 700;
   color: #e2d7c5;
 }
@@ -558,11 +569,12 @@ body {
 }
 
 .badge-soon {
-  font-family: var(--font-handwriting);
-  font-size: 15px;
+  font-family: 'Caveat', cursive;
+  font-size: 18px;
   font-weight: 700;
   color: var(--accent-brass);
-  margin-top: -4px;
+  margin-top: -6px;
+  line-height: 1;
 }
 
 /* Lightbox Modal */
@@ -570,7 +582,7 @@ body {
   position: fixed;
   inset: 0;
   z-index: 1000;
-  background: rgba(10, 6, 4, 0.92);
+  background: rgba(10, 6, 4, 0.94);
   backdrop-filter: blur(10px);
   display: flex;
   align-items: center;
@@ -613,8 +625,8 @@ body {
 
 .lightbox-title {
   margin-top: 18px;
-  font-family: var(--font-serif);
-  font-size: 22px;
+  font-family: 'Neucha', cursive;
+  font-size: 28px;
   font-weight: 700;
   color: var(--paper-bg);
 }
