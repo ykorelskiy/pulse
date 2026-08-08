@@ -111,7 +111,12 @@ def build_diagnostic_payload() -> dict[str, Any]:
         if virality is None:
             comedic = item.get("comedic_potential") or 0
             tone = item.get("tone") or 0
-            virality = (comedic * 2) if tone >= 0 else -comedic
+            if tone < 0:
+                virality = -abs(comedic) * 2
+            elif tone > 0:
+                virality = abs(comedic) * 2
+            else:
+                virality = 0
         else:
             virality = int(virality)
 

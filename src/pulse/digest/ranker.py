@@ -120,7 +120,12 @@ class TopicRanker:
             if virality is None:
                 comedic = item.get("comedic_potential") or 2
                 tone = item.get("tone") or 0
-                virality = (comedic * 2) if tone >= 0 else -comedic
+                if tone < 0:
+                    virality = -abs(comedic) * 2
+                elif tone > 0:
+                    virality = abs(comedic) * 2
+                else:
+                    virality = 0
             quality_score = rel + sig + int(virality)
 
             cid = str(item.get("cluster_id") or item.get("id"))

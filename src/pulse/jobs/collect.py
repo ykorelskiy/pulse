@@ -45,13 +45,17 @@ async def process_pending_scoring(repo: NewsRepo, curator: LLMCurator, clusterer
                     cluster_id, is_archived = clusterer.find_or_create_cluster({"id": item_id, "ru_headline": ru_headline}, recent_24h)
                     status = "archived" if is_archived else "scored"
 
+                virality = int(eval_res.get("virality", 0))
+                comedic_potential = max(1, min(5, abs(virality))) if virality != 0 else 1
+                tone = 1 if virality > 0 else (-1 if virality < 0 else 0)
+
                 update_data = {
                     "ru_headline": ru_headline,
                     "has_victims": has_victims,
                     "relevance": eval_res.get("relevance", 3),
-                    "comedic_potential": eval_res.get("comedic_potential", 2),
+                    "comedic_potential": comedic_potential,
                     "significance": eval_res.get("significance", 2),
-                    "tone": eval_res.get("tone", 0),
+                    "tone": tone,
                     "cluster_id": cluster_id,
                     "status": status,
                 }
