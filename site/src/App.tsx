@@ -15,7 +15,6 @@ export const App: React.FC = () => {
   const [currentMonth, setCurrentMonth] = useState<number>(7);
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
   const [animating, setAnimating] = useState<boolean>(false);
-  const [showMobileCalendar, setShowMobileCalendar] = useState<boolean>(false);
   const [rightPanelView, setRightPanelView] = useState<"calendar" | "news">("calendar");
 
   useEffect(() => {
@@ -111,25 +110,7 @@ export const App: React.FC = () => {
 
   return (
     <div className="app-root">
-      {/* Navbar Header */}
-      <header className="top-navbar">
-        <div className="brand-title">
-          <img src="/robot-mascot.jpg" alt="Робот Пульс Дня" className="nav-robot-avatar" />
-          <span>ПУЛЬС ДНЯ</span>
-          <span className="brand-badge">{currentYear}</span>
-        </div>
-        <div className="meta-right" style={{ display: "flex", gap: "12px", alignItems: "center" }}>
-          <button
-            className="month-nav-btn"
-            style={{ width: "auto", padding: "0 12px", fontSize: "13px" }}
-            onClick={() => setShowMobileCalendar(!showMobileCalendar)}
-          >
-            📅 {showMobileCalendar ? "Скрыть календарь" : "Календарь архива"}
-          </button>
-        </div>
-      </header>
-
-      {/* Main Grid Content */}
+      {/* Main Grid Content (Unified Natural Scroll) */}
       <main className="main-container">
         {/* Left Column: Tear-off Sheet */}
         <section className="left-section">
@@ -150,7 +131,7 @@ export const App: React.FC = () => {
         </section>
 
         {/* Right Column: Month Calendar Grid OR News List Panel */}
-        <section className={`right-section ${showMobileCalendar ? "show-mobile" : ""}`}>
+        <section className="right-section">
           {rightPanelView === "news" ? (
             <NewsListPanel
               currentDateStr={selectedDateStr}
