@@ -387,17 +387,96 @@ body {
   transform: translateX(4px);
 }
 
+.left-section {
+  transition: transform 0.4s ease, width 0.4s ease;
+}
+
+.main-container.news-mode-active .left-section {
+  transform: scale(0.68);
+  transform-origin: top left;
+  width: 147%; /* Compressing container width so scaled item sits nicely */
+}
+
 /* ------------------------------------------------------------- */
-/* News List Panel (Right Column View)                           */
+/* News List Panel (Right Column View - 720px Fixed Frame)       */
 /* ------------------------------------------------------------- */
 .news-panel-container {
   background: rgba(18, 11, 7, 0.95);
   border: 1px solid rgba(250, 204, 21, 0.45);
   border-radius: 14px;
-  padding: 28px;
+  padding: 24px 28px;
   box-shadow: 0 25px 50px rgba(0, 0, 0, 0.85);
   backdrop-filter: blur(12px);
-  min-height: 520px;
+  height: 720px;
+  max-height: 720px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.news-items-clean-list {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  flex: 1;
+  gap: 4px;
+  padding-top: 4px;
+}
+
+.news-clean-item {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 4px 6px;
+  border-radius: 6px;
+  transition: background 0.15s ease;
+}
+
+.news-clean-item:hover {
+  background: rgba(250, 204, 21, 0.08);
+}
+
+.news-num-prefix {
+  font-family: 'Neucha', cursive;
+  font-size: 19px;
+  font-weight: 700;
+  color: var(--accent-crimson);
+  flex-shrink: 0;
+  min-width: 22px;
+}
+
+.news-clean-text {
+  font-family: 'Neucha', cursive;
+  font-size: 18px;
+  font-weight: 700;
+  color: #fffdf7;
+  line-height: 1.25;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+}
+
+.news-source-inline-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(250, 204, 21, 0.15);
+  border: 1px solid rgba(250, 204, 21, 0.4);
+  color: var(--accent-brass);
+  font-family: 'Caveat', cursive;
+  font-size: 15px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 5px;
+  text-decoration: none;
+  margin-left: 6px;
+  vertical-align: middle;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.news-source-inline-badge:hover {
+  background: var(--accent-brass);
+  color: #120c08;
+  box-shadow: 0 0 10px rgba(250, 204, 21, 0.5);
 }
 
 .news-panel-header-box {

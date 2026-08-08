@@ -53,27 +53,24 @@ export const NewsListPanel: React.FC<NewsListPanelProps> = ({
         </div>
       </div>
 
-      {/* 2-Column Ultra Compact News Grid */}
+      {/* Clean 1-Column Cardless News List (Exact 720px Height Frame) */}
       {top15.length > 0 ? (
-        <div className="news-items-grid-2col">
+        <div className="news-items-clean-list">
           {top15.map((item, idx) => (
-            <div key={idx} className="news-item-card-compact">
-              <div className="news-item-num-compact">{idx + 1}</div>
-
-              <div className="news-item-text-inline">
-                <span>{item.text}</span>
-                {item.url && (
-                  <a
-                    href={item.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="news-source-inline-badge"
-                  >
-                    <span>{item.source || "Источник"}</span>
-                    <ExternalLink size={12} />
-                  </a>
-                )}
-              </div>
+            <div key={idx} className="news-clean-item">
+              <span className="news-num-prefix">{idx + 1}.</span>
+              <span className="news-clean-text">{item.text}</span>
+              {item.url && (
+                <a
+                  href={item.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="news-source-inline-badge"
+                >
+                  <span>{item.source || "Источник"}</span>
+                  <ExternalLink size={11} />
+                </a>
+              )}
             </div>
           ))}
         </div>
