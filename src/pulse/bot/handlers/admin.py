@@ -221,7 +221,6 @@ async def cmd_preview_post(message: types.Message) -> None:
             news_items=row.get("news") or [],
         )
 
-        from pulse.lib.supabase import get_public_storage_url
         img_url = f"https://zyoznyeqvorhztrpgdjw.supabase.co/storage/v1/object/public/pulse-covers/{image_path}"
 
         await message.answer_photo(
