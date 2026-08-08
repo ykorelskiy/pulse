@@ -49,8 +49,7 @@ class CaptionBuilder:
             lines.append("Ежедневный выпуск отрывного календаря.")
 
         lines.append("")
-        lines.append(f"📅 **Смотреть отрывной календарь на сайте:**")
-        lines.append(f"👉 [{site_url}/{year}/{month}/{day}]({site_url}/{year}/{month}/{day})")
+        lines.append(f"📅 Смотреть интерактивный отрывной календарь [тут]({site_url}/{year}/{month}/{day})")
         lines.append("")
         lines.append("💬 Подписаться на ежедневные позитивные новости [тут](https://t.me/a_daily_pulse)")
 
