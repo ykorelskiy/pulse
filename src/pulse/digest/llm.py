@@ -90,7 +90,7 @@ class LLMCurator:
 
         # === PHASE 1: Sentiment + translation (ALL items) ===
         phase1 = self._phase1_sentiment(items)
-        phase1_map = {str(r["id"]): r for r in phase1}
+        phase1_map = {str(r.get("id", "")): r for r in phase1}
 
         results: list[dict[str, Any]] = []
         positive_neutral_items: list[dict[str, Any]] = []
@@ -125,7 +125,7 @@ class LLMCurator:
         # === PHASE 2: Virality scoring (ONLY positive/neutral) ===
         if positive_neutral_items:
             phase2 = self._phase2_virality(positive_neutral_items)
-            phase2_map = {str(r["id"]): r for r in phase2}
+            phase2_map = {str(r.get("id", "")): r for r in phase2}
 
             for pn_item in positive_neutral_items:
                 item_id = pn_item["id"]
@@ -161,9 +161,12 @@ class LLMCurator:
         for i in range(0, len(items), CHUNK_SIZE):
             chunk = items[i:i + CHUNK_SIZE]
             payload = "\n".join(
-                f'{item.get("id", idx)}. {item.get("headline", "")}'
+                f'{str(item.get("id", idx))}. {item.get("headline", "")}'
                 for idx, item in enumerate(chunk, 1)
             )
+            # Log the IDs we're sending for debugging
+            chunk_ids = [str(item.get("id", idx)) for idx, item in enumerate(chunk, 1)]
+            logger.info("phase1_chunk", chunk_idx=i // CHUNK_SIZE, ids_count=len(chunk_ids))
             user_msg = f"Новости:\n{payload}"
 
             parsed = self._call_llm(PHASE1_SYSTEM, user_msg, phase="phase1_sentiment")
@@ -344,9 +347,13 @@ class LLMCurator:
                 return parsed
             if isinstance(parsed, dict):
                 # Groq sometimes wraps in {"news": [...]} or {"results": [...]}
-                for key in ("news", "results", "items", "data"):
+                for key in ("news", "results", "items", "data", "evaluations", "scores"):
                     if key in parsed and isinstance(parsed[key], list):
                         return parsed[key]
+                # Fallback: if there's any value that is a list, assume it's the items array
+                for val in parsed.values():
+                    if isinstance(val, list):
+                        return val
                 return [parsed]
             return None
         except json.JSONDecodeError:
