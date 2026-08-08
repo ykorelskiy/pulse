@@ -46,12 +46,10 @@ async def run_intake_job() -> int:
 
                 h_hash = compute_headline_hash(headline)
                 saved = repo.add_article(
-                    source=getattr(adapter, "name", adapter.source_id),
-                    headline_original=headline,
-                    headline_hash=h_hash,
-                    source_url=art.url,
                     source_id=adapter.source_id,
-                    ru_headline=headline,
+                    headline=headline,
+                    url=art.url,
+                    summary=getattr(art, "summary", "") or "",
                 )
                 if saved:
                     total_saved += 1
