@@ -29,7 +29,7 @@ export const NewsListPanel: React.FC<NewsListPanelProps> = ({
       <div className="news-panel-header">
         <div className="news-panel-title-group">
           <Newspaper className="news-icon" size={28} />
-          <h2 className="news-panel-title">ГЛАВНЫЕ НОВОСТИ ДНЯ</h2>
+          <h2 className="news-panel-title">ГЛАВНЫЕ ПОЗИТИВНЫЕ НОВОСТИ ДНЯ</h2>
         </div>
 
         <button className="back-to-calendar-btn" onClick={onClose}>

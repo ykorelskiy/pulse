@@ -34,7 +34,7 @@ class CaptionBuilder:
         lines = []
         lines.append(f"🖼 **ПУЛЬС ДНЯ — {formatted_date}**")
         lines.append("")
-        lines.append("📌 **Главное за день:**")
+        lines.append("📌 **Главные позитивные новости дня:**")
 
         if news_items:
             # Format top 10 news items for channel post
