@@ -14,7 +14,7 @@ from pulse.digest.ranker import TopicRanker
 from pulse.logging import get_logger
 from pulse.publisher.caption import CaptionBuilder
 from pulse.publisher.orchestrator import MultiPublisherOrchestrator
-from pulse.publisher.site_publisher import get_msk_today, process_and_upload_cover
+from pulse.publisher.site_publisher import get_active_issue_date, get_msk_today, process_and_upload_cover
 
 logger = get_logger("pulse.bot.admin")
 router = Router()
