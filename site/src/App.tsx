@@ -125,7 +125,7 @@ export function App() {
         <div className="brand-title">
           <img src="/robot-mascot.jpg" alt="Робот Пульс Дня" className="nav-robot-avatar" />
           <span>ПУЛЬС ДНЯ</span>
-          <span className="brand-badge">2026</span>
+          <span className="brand-badge">{currentYear}</span>
         </div>
         <div className="meta-right" style={{ display: "flex", gap: "12px", alignItems: "center" }}>
           <button
@@ -164,8 +164,8 @@ export function App() {
             onSelectDate={(d) => navigateToDate(d)}
             onPrevMonth={handlePrevMonth}
             onNextMonth={handleNextMonth}
-            canPrevMonth={currentMonth > 6 || currentYear > 2026}
-            canNextMonth={currentMonth < 11 || currentYear < 2026}
+            canPrevMonth={currentYear > 2026 || (currentYear === 2026 && currentMonth > 6)}
+            canNextMonth={true}
           />
         </section>
       </main>
