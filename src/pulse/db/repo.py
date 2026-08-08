@@ -385,7 +385,13 @@ class NewsRepo(BaseRepo):
         if not self.client:
             return
         try:
-            self.client.table("news_items").update(update_data).eq("id", article_id).execute()
+            allowed_keys = {
+                "ru_headline", "has_victims", "relevance", "comedic_potential",
+                "significance", "tone", "cluster_id", "status"
+            }
+            clean_data = {k: v for k, v in update_data.items() if k in allowed_keys}
+            if clean_data:
+                self.client.table("news_items").update(clean_data).eq("id", article_id).execute()
         except Exception:
             pass
 
