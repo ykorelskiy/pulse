@@ -186,9 +186,13 @@ async def send_full_post_preview(
 
 
 @router.message(F.photo)
-async def cmd_process_photo(message: types.Message, bot: Bot) -> None:
+async def cmd_process_photo(message: types.Message) -> None:
     """Process uploaded poster photo, generate 3 sizes, and immediately send full post preview."""
     if not is_admin(message.from_user):
+        return
+
+    bot = message.bot
+    if not bot:
         return
 
     caption_text = message.caption or ""
@@ -241,9 +245,13 @@ async def cmd_process_photo(message: types.Message, bot: Bot) -> None:
 
 @router.message(Command("post"))
 @router.message(Command("preview_post"))
-async def cmd_preview_post(message: types.Message, bot: Bot) -> None:
+async def cmd_preview_post(message: types.Message) -> None:
     """Send channel post preview if image uploaded, or latest top 15 news if no image yet."""
     if not is_admin(message.from_user):
+        return
+
+    bot = message.bot
+    if not bot:
         return
 
     text = message.text or ""
