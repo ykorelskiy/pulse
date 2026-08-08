@@ -448,7 +448,7 @@ body {
 
 .control-row-1 {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: flex-end;
   height: 26px;
 }
@@ -464,8 +464,9 @@ body {
   background: #24170d;
   border: 1px solid rgba(250, 204, 21, 0.5);
   color: #fffdf7;
-  width: 52px;
-  height: 24px;
+  width: 56px;
+  height: 25px;
+  margin-top: -3px;
   border-radius: 6px;
   display: flex;
   align-items: center;

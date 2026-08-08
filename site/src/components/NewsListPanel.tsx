@@ -54,7 +54,7 @@ export const NewsListPanel: React.FC<NewsListPanelProps> = ({
       {/* News Items List */}
       {newsItems && newsItems.length > 0 ? (
         <div className="news-items-list">
-          {newsItems.slice(0, 10).map((item, idx) => (
+          {newsItems.slice(0, 15).map((item, idx) => (
             <div key={idx} className="news-item-card">
               <div className="news-item-num">{idx + 1}</div>
 
