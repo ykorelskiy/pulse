@@ -1,8 +1,7 @@
 """Telegram Public Web Channel source adapter."""
 
-import hashlib
-import re
 from datetime import datetime, timezone
+import re
 
 import httpx
 
@@ -31,10 +30,10 @@ class TelegramChannelAdapter(BaseSourceAdapter):
         self.category = category
 
     async def fetch_latest(self) -> list[NewsArticle]:
-        """Fetch latest posts from Telegram public web preview.
+        """Fetch latest posts from Telegram public web preview with exact post URLs.
 
         Returns:
-            list[NewsArticle]: Parsed news articles with unique URLs.
+            list[NewsArticle]: Parsed news articles with direct post URLs (https://t.me/channel/id).
         """
         articles: list[NewsArticle] = []
         try:
@@ -45,14 +44,25 @@ class TelegramChannelAdapter(BaseSourceAdapter):
                     return []
 
                 raw_html = resp.text
-                matches = re.findall(
-                    r'<div class="tgme_widget_message_text js-message_text[^"]*"[^>]*>(.*?)</div>',
+
+                # Find all message blocks with data-post attribute
+                blocks = re.findall(
+                    r'<div class="tgme_widget_message [^"]*"[^>]*data-post="([^"]+)"[^>]*>(.*?)</div>\s*</div>\s*</div>\s*</div>',
                     raw_html,
                     re.DOTALL,
                 )
 
-                for _idx, raw_post in enumerate(matches, 1):
-                    clean_text = re.sub(r"<[^>]+>", " ", raw_post)
+                for post_id, block_html in blocks:
+                    text_match = re.search(
+                        r'<div class="tgme_widget_message_text js-message_text[^"]*"[^>]*>(.*?)</div>',
+                        block_html,
+                        re.DOTALL,
+                    )
+                    if not text_match:
+                        continue
+
+                    raw_text = text_match.group(1)
+                    clean_text = re.sub(r"<[^>]+>", " ", raw_text)
                     clean_text = " ".join(clean_text.split()).strip()
                     if not clean_text or len(clean_text) < 15:
                         continue
@@ -64,17 +74,15 @@ class TelegramChannelAdapter(BaseSourceAdapter):
                         headline = f"{headline}. {parts[1].strip()}"
                     headline = headline[:150]
 
-                    # Unique URL per post via MD5 hash to prevent Supabase overwrites
-                    post_hash = hashlib.md5(clean_text.encode("utf-8")).hexdigest()[:10]
-                    unique_post_url = f"https://t.me/s/{self.channel_name}#{post_hash}"
-
+                    # Exact direct URL to specific Telegram post: https://t.me/readovkanews/113658
+                    direct_post_url = f"https://t.me/{post_id}"
 
                     articles.append(
                         NewsArticle(
                             source_id=self.source_id,
                             headline=headline,
                             summary=clean_text[:300],
-                            url=unique_post_url,
+                            url=direct_post_url,
                             published_at=datetime.now(timezone.utc),
                         )
                     )
