@@ -87,3 +87,32 @@ class RSSSourceAdapter(BaseSourceAdapter):
             pass
 
         return articles
+
+
+class CalendRuAdapter(RSSSourceAdapter):
+    """Adapter that merges all daily holidays into a single news article."""
+
+    async def fetch_latest(self) -> list[NewsArticle]:
+        articles = await super().fetch_latest()
+        if not articles:
+            return []
+
+        import re
+        titles = []
+        for a in articles:
+            clean = re.sub(r"^\d+\s*-\s*", "", a.headline).strip()
+            # limit to top 5 holidays to avoid giant headlines
+            if len(titles) < 5:
+                titles.append(clean)
+        
+        combined_headline = "Праздники сегодня: " + ", ".join(titles)
+        
+        merged = NewsArticle(
+            source_id=self.source_id,
+            headline=combined_headline,
+            summary="Сегодня отмечаются: " + ", ".join(titles),
+            url="https://www.calend.ru/",
+            published_at=articles[0].published_at,
+        )
+        return [merged]
+

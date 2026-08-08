@@ -2,7 +2,7 @@
 
 from pulse.config import get_config
 from pulse.sources.base import BaseSourceAdapter
-from pulse.sources.rss import RSSSourceAdapter
+from pulse.sources.rss import RSSSourceAdapter, CalendRuAdapter
 from pulse.sources.telegram_web import TelegramChannelAdapter
 
 
@@ -36,12 +36,20 @@ class SourceRegistry:
                         category=item.get("category", "ru_hot"),
                     )
                 else:
-                    adapter = RSSSourceAdapter(
-                        source_id=item["id"],
-                        feed_url=item["url"],
-                        name=item.get("name", item["id"]),
-                        category=item.get("category", "general"),
-                    )
+                    if item["id"] == "calend_ru":
+                        adapter = CalendRuAdapter(
+                            source_id=item["id"],
+                            feed_url=item["url"],
+                            name=item.get("name", item["id"]),
+                            category=item.get("category", "lifestyle"),
+                        )
+                    else:
+                        adapter = RSSSourceAdapter(
+                            source_id=item["id"],
+                            feed_url=item["url"],
+                            name=item.get("name", item["id"]),
+                            category=item.get("category", "general"),
+                        )
                 registry.register(adapter)
 
         return registry
