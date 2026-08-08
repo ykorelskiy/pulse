@@ -141,7 +141,8 @@ def build_diagnostic_payload() -> dict[str, Any]:
                 hours_old = 0.0
 
         freshness_score = max(0, 6 - int(hours_old / 4.0))
-        total_score = quality_score + breadth_score + freshness_score if status == "scored" else 0
+        # Temporarily omit breadth_score as requested: Total = Quality + Freshness
+        total_score = quality_score + freshness_score if status == "scored" else 0
 
         article_obj = {
             "id": str(item.get("id")),

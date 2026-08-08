@@ -49,7 +49,10 @@ class BriefBuilder:
             for idx, item in enumerate(top_10_curated, 1):
                 headline = item.get("headline", "")
                 url = item.get("url", "#")
-                lines.append(f"  {idx}. **«{headline}»** — [источник]({url})")
+                src = item.get("source_name", "источник")
+                score_val = item.get("total_score")
+                score_str = f" [⭐ {score_val} б.]" if score_val is not None else ""
+                lines.append(f"  {idx}.{score_str} **«{headline}»** — [{src}]({url})")
         lines.append("")
 
         # -------------------------------------------------------------
@@ -69,14 +72,15 @@ class BriefBuilder:
                 if isinstance(raw_c, list):
                     candidates = raw_c
 
-
         if candidates:
             for idx, item in enumerate(candidates, 1):
                 if isinstance(item, dict):
                     headline = item.get("headline", "")
                     url = item.get("url", "#")
                     src = item.get("source_name", "источник")
-                    lines.append(f"  {idx}. **«{headline}»** — [{src}]({url})")
+                    score_val = item.get("total_score")
+                    score_str = f" [⭐ {score_val} б.]" if score_val is not None else ""
+                    lines.append(f"  {idx}.{score_str} **«{headline}»** — [{src}]({url})")
                 else:
                     lines.append(f"  {idx}. **«{item}»**")
         lines.append("")

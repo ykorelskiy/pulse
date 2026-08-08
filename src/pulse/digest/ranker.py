@@ -140,7 +140,8 @@ class TopicRanker:
 
             freshness_score = max(0, 6 - int(hours_old / 4.0))
 
-            total_score = quality_score + breadth_score + freshness_score
+            # Temporarily omit breadth_score as requested: Total = Quality + Freshness
+            total_score = quality_score + freshness_score
             item_copy = dict(item)
             item_copy["headline"] = headline
             item_copy["source_name"] = sname
