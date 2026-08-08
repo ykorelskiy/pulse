@@ -394,63 +394,80 @@ body {
   min-height: 520px;
 }
 
-.news-panel-header {
+.news-panel-header-box {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 6px;
-}
-
-.news-panel-title-group {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  color: var(--accent-brass);
-}
-
-.news-icon {
-  color: var(--accent-brass);
-}
-
-.news-panel-title {
-  font-family: 'Neucha', cursive;
-  font-size: 34px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  color: var(--accent-brass);
-  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9);
-}
-
-.news-panel-date-sub {
-  font-family: 'Caveat', cursive;
-  font-size: 24px;
-  font-weight: 700;
-  color: #fef08a;
-  margin-bottom: 22px;
-  padding-bottom: 12px;
+  margin-bottom: 20px;
+  padding-bottom: 14px;
   border-bottom: 1px dashed rgba(250, 204, 21, 0.35);
 }
 
-.back-to-calendar-btn {
+.news-title-left {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 12px;
+  color: var(--accent-brass);
+}
+
+.news-title-lines {
+  display: flex;
+  flex-direction: column;
+  line-height: 0.95;
+}
+
+.title-line-1 {
+  font-family: 'Neucha', cursive;
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--accent-brass);
+  letter-spacing: 0.04em;
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.9);
+}
+
+.title-line-2 {
+  font-family: 'Neucha', cursive;
+  font-size: 28px;
+  font-weight: 700;
+  color: #fffdf7;
+  letter-spacing: 0.04em;
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.9);
+}
+
+.news-controls-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.back-arrow-btn {
   background: #24170d;
   border: 1px solid rgba(250, 204, 21, 0.5);
   color: #fffdf7;
-  padding: 6px 14px;
+  width: 40px;
+  height: 40px;
   border-radius: 8px;
-  font-family: 'Neucha', cursive;
-  font-size: 18px;
-  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
   transition: all 0.2s ease;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
 }
 
-.back-to-calendar-btn:hover {
+.back-arrow-btn:hover {
   background: var(--accent-brass);
   color: #120c08;
-  box-shadow: 0 0 16px rgba(250, 204, 21, 0.6);
+  box-shadow: 0 0 16px rgba(250, 204, 21, 0.7);
+}
+
+.news-date-sub {
+  font-family: 'Caveat', cursive;
+  font-size: 21px;
+  font-weight: 700;
+  color: #fef08a;
+  white-space: nowrap;
 }
 
 .news-items-list {
