@@ -232,13 +232,20 @@ async def cmd_preview_post(message: types.Message) -> None:
         else:
             [y, m, d] = target_date.split("-")
             short_caption = f"🖼 **ПУЛЬС ДНЯ — {d}.{m}.{y}**"
+            
+            # Strip duplicate header line from text message body
+            text_body = caption
+            if text_body.startswith("🖼 **ПУЛЬС ДНЯ"):
+                lines = text_body.split("\n", 2)
+                text_body = lines[-1].lstrip()
+
             await message.answer_photo(
                 photo=img_url,
                 caption=short_caption,
                 parse_mode="Markdown",
             )
             await message.answer(
-                text=caption,
+                text=text_body,
                 parse_mode="Markdown",
                 disable_web_page_preview=True,
             )
