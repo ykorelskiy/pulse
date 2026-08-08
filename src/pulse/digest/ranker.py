@@ -67,15 +67,11 @@ class TopicRanker:
             if sname in source_stats_map:
                 source_stats_map[sname]["analyzed"] += 1
 
-        # Ranking: only use scored items from active enabled sources
-        raw_items = [i for i in self.news_repo.get_scored_24h_news() if str(i.get("source_id")) in source_map]
-        if not raw_items:
-            from pulse.publisher.site_publisher import get_active_cycle_start_iso
-            cutoff = get_active_cycle_start_iso()
-            raw_items = [
-                i for i in self.news_repo.get_latest_news(limit=200)
-                if str(i.get("source_id")) in source_map and (i.get("collected_at") or "") >= cutoff
-            ]
+        # Ranking: strictly ONLY use scored items from active enabled sources
+        raw_items = [
+            i for i in self.news_repo.get_scored_24h_news()
+            if str(i.get("source_id")) in source_map and i.get("status") == "scored"
+        ]
 
         now = datetime.now(timezone.utc)
 
@@ -91,11 +87,6 @@ class TopicRanker:
         scored_items: list[tuple[float, dict[str, Any]]] = []
         seen_headlines: set[str] = set()
 
-        HARD_BAN_KEYWORDS = [
-            "погиб", "пострад", "убит", "гибель", "ранен", "жертв", "убийств",
-            "крушени", "авари", "рухнул", "катастроф", "пожар"
-        ]
-
         for item in raw_items:
             sid = str(item.get("source_id") or "news")
             sname = source_map.get(sid, sid)
@@ -104,10 +95,8 @@ class TopicRanker:
             if not headline or headline.lower() in seen_headlines:
                 continue
 
-            # Hard ban filter check for military, disasters, arrests and casualties
-            if item.get("has_victims") or item.get("status") == "rejected_victims":
-                continue
-            if any(k in headline.lower() for k in HARD_BAN_KEYWORDS):
+            # Semantic emotional impact filter (evaluated by Gemini LLM)
+            if item.get("has_victims") is True or item.get("status") == "rejected_victims":
                 continue
 
             seen_headlines.add(headline.lower())
