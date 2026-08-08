@@ -37,8 +37,8 @@ class CaptionBuilder:
         lines.append("📌 **Главное за день:**")
 
         if news_items:
-            # Format top 5-7 news items for channel post
-            for idx, item in enumerate(news_items[:7], 1):
+            # Format top 10 news items for channel post
+            for idx, item in enumerate(news_items[:10], 1):
                 text = item.get("text", "")
                 url = item.get("url", "")
                 if url:
