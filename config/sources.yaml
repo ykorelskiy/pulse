@@ -225,3 +225,10 @@ sources:
     category: "tech"
     weight: 0.05
     enabled: true
+
+  - id: calend_ru
+    name: "Календарь праздников"
+    url: "https://www.calend.ru/rss/calend.rss"
+    category: "lifestyle"
+    weight: 0.10
+    enabled: true
