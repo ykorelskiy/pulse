@@ -25,25 +25,29 @@ export const NewsListPanel: React.FC<NewsListPanelProps> = ({
 
   return (
     <div className="news-panel-container">
-      {/* Compact 2-line Header Box */}
+      {/* 2-line Strict Aligned Header Box */}
       <div className="news-panel-header-box">
         <div className="news-title-left">
           <Newspaper className="news-icon" size={32} />
           <div className="news-title-lines">
-            <span className="title-line-1">ГЛАВНЫЕ ПОЗИТИВНЫЕ</span>
-            <span className="title-line-2">НОВОСТИ ДНЯ</span>
+            <div className="title-row-1">ГЛАВНЫЕ ПОЗИТИВНЫЕ</div>
+            <div className="title-row-2">НОВОСТИ ДНЯ</div>
           </div>
         </div>
 
         <div className="news-controls-right">
-          <button
-            className="back-arrow-btn"
-            onClick={onClose}
-            title="Вернуться к календарю месяца"
-          >
-            <ArrowLeft size={22} />
-          </button>
-          <div className="news-date-sub">{formattedTitleDate}</div>
+          <div className="control-row-1">
+            <button
+              className="back-arrow-pill-btn"
+              onClick={onClose}
+              title="Вернуться к календарю месяца"
+            >
+              <ArrowLeft size={18} />
+            </button>
+          </div>
+          <div className="control-row-2">
+            <div className="news-date-sub">{formattedTitleDate}</div>
+          </div>
         </div>
       </div>
 
