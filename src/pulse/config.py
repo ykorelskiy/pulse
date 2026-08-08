@@ -100,9 +100,9 @@ class Settings(BaseSettings):
         description="Telegram Chat ID for author notifications",
     )
 
-    CHANNEL_CHAT_ID: int | None = Field(
-        default=None,
-        description="Target public Telegram channel ID",
+    CHANNEL_CHAT_ID: str | int | None = Field(
+        default="@a_daily_pulse",
+        description="Target public Telegram channel ID or @username",
     )
     DISCUSSION_GROUP_ID: int | None = Field(
         default=None,
