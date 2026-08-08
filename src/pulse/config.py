@@ -117,6 +117,15 @@ class Settings(BaseSettings):
         description="Google Gemini API key for translation and news curation",
     )
 
+    # VKontakte Auto-publishing
+    VK_ACCESS_TOKEN: str | None = Field(
+        default=None,
+        description="VK Community Access Token with wall permissions",
+    )
+    VK_GROUP_ID: int | None = Field(
+        default=240745088,
+        description="VK Community Group ID number",
+    )
 
     model_config = SettingsConfigDict(
         env_file=".env",
