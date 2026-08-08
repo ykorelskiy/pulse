@@ -39,27 +39,10 @@ class BriefBuilder:
         lines = [
             "🎨 **БРИФ ПЛАКАТА ДНЯ ДЛЯ АВТОРА (@anta9onist)**",
             f"📅 **Дата:** {date_str}\n",
+            "📰 **ТОП-50 проанализированных новостей дня (по баллу ⬇️):**",
         ]
 
-        # -------------------------------------------------------------
-        # Section 1: Top 10 Curated News (Selected by AI)
-        # -------------------------------------------------------------
-        lines.append("1️⃣ **10 отборных новостей (ИИ-отбор):**")
-        if top_10_curated and isinstance(top_10_curated, list):
-            for idx, item in enumerate(top_10_curated, 1):
-                headline = item.get("headline", "")
-                url = item.get("url", "#")
-                src = item.get("source_name", "источник")
-                score_val = item.get("total_score")
-                score_str = f" [⭐ {score_val} б.]" if score_val is not None else ""
-                lines.append(f"  {idx}.{score_str} **«{headline}»** — [{src}]({url})")
-        lines.append("")
-
-        # -------------------------------------------------------------
-        # Section 2: Top 50 News Candidate Pool (Flat list, no % tags)
-        # -------------------------------------------------------------
-        lines.append("2️⃣ **ТОП-50 всех проанализированных новостей дня:**")
-        candidates = top_50_flat or []
+        candidates = top_50_flat or top_10_curated or []
         if not candidates:
             if all_30_categorized:
                 flat_from_cats = []
@@ -83,24 +66,6 @@ class BriefBuilder:
                     lines.append(f"  {idx}.{score_str} **«{headline}»** — [{src}]({url})")
                 else:
                     lines.append(f"  {idx}. **«{item}»**")
-        lines.append("")
-
-        # -------------------------------------------------------------
-        # Section 3: Sources Audit Statistics
-        # -------------------------------------------------------------
-        lines.append("3️⃣ **Перечень источников и статистика сбора:**")
-        if source_stats:
-            for stat in source_stats:
-                sname = stat.get("name", "Источник")
-                analyzed = stat.get("analyzed", 0)
-                in_50 = stat.get("in_top_50", 0)
-                in_10 = stat.get("in_top_10", 0)
-                lines.append(
-                    f"  • **{sname}** — всего проанализировано: {analyzed} | "
-                    f"вошло в ТОП-50: {in_50} | вошло в ТОП-10: {in_10}"
-                )
-        else:
-            lines.append("  • *Статистика обновляется при следующем сборе*")
         lines.append("")
 
         # -------------------------------------------------------------
