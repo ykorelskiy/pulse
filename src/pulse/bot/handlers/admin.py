@@ -208,7 +208,7 @@ async def cmd_preview_post(message: types.Message) -> None:
             return
 
         row = rows[0]
-        image_path = row.get("thumb480_path") or row.get("image_path")
+        image_path = row.get("image_path") or row.get("thumb480_path")
         if not image_path:
             await message.answer(f"⚠️ Для даты {target_date} нет загруженного изображения.")
             return

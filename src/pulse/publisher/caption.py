@@ -52,6 +52,6 @@ class CaptionBuilder:
         lines.append(f"📅 **Смотреть отрывной календарь на сайте:**")
         lines.append(f"👉 [{site_url}/{year}/{month}/{day}]({site_url}/{year}/{month}/{day})")
         lines.append("")
-        lines.append("💬 **Подписаться:** @a_daily_pulse")
+        lines.append("💬 **Подписаться:** [@a\\_daily\\_pulse](https://t.me/a_daily_pulse)")
 
         return "\n".join(lines)
