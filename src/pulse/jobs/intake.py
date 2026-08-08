@@ -40,7 +40,7 @@ async def run_intake_job() -> int:
         try:
             articles = await adapter.fetch_latest()
             for art in articles:
-                headline = art.title or art.headline
+                headline = getattr(art, "headline", getattr(art, "title", ""))
                 if not headline:
                     continue
 

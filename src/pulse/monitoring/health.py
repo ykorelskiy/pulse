@@ -18,6 +18,23 @@ logger = get_logger("pulse.monitoring.health")
 STATE_FILE = Path("/tmp/pulse_watchdog_state.json")
 
 
+def get_admin_chat_id() -> int | str | None:
+    cfg = get_config().settings
+    if cfg.ADMIN_CHAT_ID and cfg.ADMIN_CHAT_ID != 123456789:
+        return cfg.ADMIN_CHAT_ID
+    try:
+        client = get_supabase_client()
+        res = client.table("users").select("telegram_id, username").execute()
+        for u in (res.data or []):
+            if u.get("username") and str(u.get("username")).lower() == "anta9onist":
+                return u.get("telegram_id")
+            if u.get("telegram_id"):
+                return u.get("telegram_id")
+    except Exception:
+        pass
+    return None
+
+
 class SystemWatchdog:
     """Monitors system health, per-feed silence (>3h), Supabase activity, and LLM API status."""
 
@@ -98,7 +115,7 @@ class SystemWatchdog:
         """Run all watchdog checks and send throttled alerts/recovery messages to admin Telegram."""
         cfg = get_config().settings
         bot = Bot(token=cfg.TELEGRAM_BOT_TOKEN)
-        admin_chat = cfg.ADMIN_CHAT_ID
+        admin_chat = get_admin_chat_id()
 
         notifications: list[str] = []
         now_ts = datetime.now(timezone.utc).timestamp()
