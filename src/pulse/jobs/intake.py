@@ -45,7 +45,7 @@ async def run_intake_job() -> int:
                     continue
 
                 h_hash = compute_headline_hash(headline)
-                saved = repo.save_news_item(
+                saved = repo.add_article(
                     source=getattr(adapter, "name", adapter.source_id),
                     headline_original=headline,
                     headline_hash=h_hash,
@@ -70,10 +70,9 @@ async def run_intake_job() -> int:
             try:
                 sc_res = await curator.score_news_item(item)
                 if sc_res:
-                    if sc_res.get("has_victims"):
-                        repo.update_scored_item(item["id"], sc_res, status="rejected_victims")
-                    else:
-                        repo.update_scored_item(item["id"], sc_res, status="scored")
+                    status = "rejected_victims" if sc_res.get("has_victims") else "scored"
+                    update_data = {**sc_res, "status": status}
+                    repo.update_scored_article(item["id"], update_data)
                     scored_count += 1
             except Exception as e:
                 logger.error("news_item_scoring_failed", item_id=item.get("id"), error=str(e))
