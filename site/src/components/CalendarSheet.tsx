@@ -28,6 +28,10 @@ export const CalendarSheet: React.FC<CalendarSheetProps> = ({
   const header = getFormattedHeaderDate(currentDateStr);
   const [imgError, setImgError] = useState(false);
 
+  React.useEffect(() => {
+    setImgError(false);
+  }, [currentDateStr, issue?.image_path]);
+
   const coverUrl = issue?.image_path ? getPublicStorageUrl(issue.image_path) : "";
 
   return (
