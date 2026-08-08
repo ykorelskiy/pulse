@@ -254,7 +254,11 @@ async def cmd_preview_post(message: types.Message) -> None:
         try:
             from pulse.publisher.vk import VKPublisher
             vk_pub = VKPublisher()
-            vk_url = await vk_pub.publish_issue(image_input=img_url, text=caption)
+            vk_text = vk_pub.format_vk_post_text(
+                date_str=target_date,
+                news_items=row.get("news") or [],
+            )
+            vk_url = await vk_pub.publish_issue(image_input=img_url, text=vk_text)
             await message.answer(f"🌐 **Опубликовано во ВКонтакте:** [Перейти к посту в VK]({vk_url})", parse_mode="Markdown")
         except Exception as vk_err:
             await message.answer(f"⚠️ **ВКонтакте:** {vk_err}")

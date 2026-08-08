@@ -1,4 +1,4 @@
-"""VKontakte community publisher implementing native wall photo posting and fallback wall post via VK API v5.199."""
+"""VKontakte community publisher implementing native wall photo posting via VK API v5.199."""
 
 import asyncio
 from pathlib import Path
@@ -25,6 +25,48 @@ class VKPublisher:
         cfg = get_config().settings
         self.access_token = access_token or cfg.VK_ACCESS_TOKEN
         self.group_id = group_id or cfg.VK_GROUP_ID
+
+    def format_vk_post_text(
+        self,
+        date_str: str,
+        news_items: list[dict[str, Any]],
+        site_url: str = "http://192.109.206.42:8081",
+    ) -> str:
+        """Format 15 news items with clickable links for VK post.
+
+        Args:
+            date_str: Date string YYYY-MM-DD.
+            news_items: List of news item dicts.
+            site_url: Showcase website URL.
+
+        Returns:
+            str: Formatted VK wall post text.
+        """
+        [y, m, d] = date_str.split("-")
+        formatted_date = f"{d}.{m}.{y}"
+
+        lines = [
+            f"🖼 ПУЛЬС ДНЯ — {formatted_date}",
+            "",
+            "📌 Главные позитивные новости дня:",
+        ]
+
+        if news_items:
+            for idx, item in enumerate(news_items[:15], 1):
+                text = item.get("text") or item.get("ru_headline") or item.get("headline", "")
+                url = item.get("url", "")
+                if url:
+                    lines.append(f"{idx}. {text}\n🔗 {url}")
+                else:
+                    lines.append(f"{idx}. {text}")
+        else:
+            lines.append("Ежедневный выпуск отрывного календаря.")
+
+        lines.append("")
+        lines.append(f"📅 Интерактивный отрывной календарь: {site_url}/{y}/{m}/{d}")
+        lines.append("💬 Канал в Telegram: https://t.me/a_daily_pulse")
+
+        return "\n".join(lines)
 
     async def publish_issue(
         self,
@@ -95,7 +137,14 @@ class VKPublisher:
 
                             if "response" in data_save and len(data_save["response"]) > 0:
                                 saved_photo = data_save["response"][0]
-                                photo_attachment_id = f"photo{saved_photo['owner_id']}_{saved_photo['id']}"
+                                owner_id = saved_photo.get("owner_id")
+                                photo_id = saved_photo.get("id")
+                                access_key = saved_photo.get("access_key")
+
+                                photo_attachment_id = f"photo{owner_id}_{photo_id}"
+                                if access_key:
+                                    photo_attachment_id += f"_{access_key}"
+
                     else:
                         err_msg = data_server.get("error", {}).get("error_msg", str(data_server))
                         logger.warning("vk_photo_upload_skipped_due_to_scope", error=err_msg)
