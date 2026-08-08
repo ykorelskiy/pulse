@@ -423,7 +423,13 @@ body {
 }
 
 .fade-in-panel {
-  animation: fadeInPanel 0.45s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  animation: fadeInPanel 0.35s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.closing-exit {
+  opacity: 0;
+  transform: translateY(-8px);
+  transition: opacity 0.3s ease, transform 0.3s ease;
 }
 
 @keyframes fadeInPanel {
@@ -434,6 +440,21 @@ body {
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+.month-grid-container {
+  animation: fadeInGrid 0.4s ease forwards;
+}
+
+@keyframes fadeInGrid {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
   }
 }
 
@@ -462,11 +483,22 @@ body {
   gap: 12px;
   padding: 3px 6px;
   border-radius: 6px;
-  transition: background 0.15s ease;
+  transition: background 0.2s ease, transform 0.15s ease;
+  text-decoration: none;
 }
 
-.news-clean-item:hover {
-  background: rgba(250, 204, 21, 0.08);
+.news-clean-item.clickable-news-row {
+  cursor: pointer;
+}
+
+.news-clean-item.clickable-news-row:hover {
+  background: rgba(250, 204, 21, 0.14);
+  transform: translateX(3px);
+}
+
+.news-clean-item.clickable-news-row:hover .news-clean-text {
+  color: #fef08a;
+  text-decoration: underline;
 }
 
 .news-content-left {

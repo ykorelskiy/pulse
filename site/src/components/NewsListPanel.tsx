@@ -13,12 +13,14 @@ interface NewsListPanelProps {
   newsItems: NewsItem[];
   title?: string;
   onClose: () => void;
+  isClosing?: boolean;
 }
 
 export const NewsListPanel: React.FC<NewsListPanelProps> = ({
   currentDateStr,
   newsItems,
   onClose,
+  isClosing,
 }) => {
   const headerDate = getFormattedHeaderDate(currentDateStr);
   const formattedTitleDate = `${headerDate.dayNum} ${headerDate.monthName.toUpperCase()} ${headerDate.year}`;
@@ -26,7 +28,7 @@ export const NewsListPanel: React.FC<NewsListPanelProps> = ({
   const top15 = (newsItems || []).slice(0, 15);
 
   return (
-    <div className="news-panel-container fade-in-panel">
+    <div className={`news-panel-container ${isClosing ? "closing-exit" : "fade-in-panel"}`}>
       {/* 2-line Strict Aligned Header Box */}
       <div className="news-panel-header-box">
         <div className="news-title-left">
@@ -53,31 +55,41 @@ export const NewsListPanel: React.FC<NewsListPanelProps> = ({
         </div>
       </div>
 
-      {/* Clean 1-Column News List with Right-Aligned Equal-Width Buttons */}
+      {/* Clean 1-Column News List (Entire Row Clickable) */}
       {top15.length > 0 ? (
         <div className="news-items-clean-list">
-          {top15.map((item, idx) => (
-            <div key={idx} className="news-clean-item">
-              <div className="news-content-left">
-                <span className="news-num-prefix">{idx + 1}.</span>
-                <span className="news-clean-text">{item.text}</span>
-              </div>
+          {top15.map((item, idx) => {
+            const hasUrl = !!item.url;
+            const RowWrapper = hasUrl ? "a" : "div";
+            const rowProps = hasUrl
+              ? {
+                  href: item.url,
+                  target: "_blank",
+                  rel: "noopener noreferrer",
+                  className: "news-clean-item clickable-news-row",
+                }
+              : {
+                  className: "news-clean-item",
+                };
 
-              {item.url ? (
-                <a
-                  href={item.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="news-source-fixed-btn"
-                >
-                  <span>{item.source || "Источник"}</span>
-                  <ExternalLink size={12} />
-                </a>
-              ) : (
-                <div className="news-source-fixed-placeholder" />
-              )}
-            </div>
-          ))}
+            return (
+              <RowWrapper key={idx} {...(rowProps as any)}>
+                <div className="news-content-left">
+                  <span className="news-num-prefix">{idx + 1}.</span>
+                  <span className="news-clean-text">{item.text}</span>
+                </div>
+
+                {hasUrl ? (
+                  <span className="news-source-fixed-btn">
+                    <span>{item.source || "Источник"}</span>
+                    <ExternalLink size={12} />
+                  </span>
+                ) : (
+                  <div className="news-source-fixed-placeholder" />
+                )}
+              </RowWrapper>
+            );
+          })}
         </div>
       ) : (
         <div className="news-empty-state">

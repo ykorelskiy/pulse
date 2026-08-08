@@ -16,6 +16,25 @@ export const App: React.FC = () => {
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
   const [animating, setAnimating] = useState<boolean>(false);
   const [rightPanelView, setRightPanelView] = useState<"calendar" | "news">("calendar");
+  const [isClosingNews, setIsClosingNews] = useState<boolean>(false);
+
+  const handleToggleNewsView = () => {
+    if (rightPanelView === "news") {
+      handleCloseNews();
+    } else {
+      setIsClosingNews(false);
+      setRightPanelView("news");
+    }
+  };
+
+  const handleCloseNews = () => {
+    if (isClosingNews) return;
+    setIsClosingNews(true);
+    setTimeout(() => {
+      setRightPanelView("calendar");
+      setIsClosingNews(false);
+    }, 320);
+  };
 
   useEffect(() => {
     const path = window.location.pathname;
@@ -111,7 +130,11 @@ export const App: React.FC = () => {
   return (
     <div className="app-root">
       {/* Main Grid Content (Unified Natural Scroll) */}
-      <main className={`main-container ${rightPanelView === "news" ? "news-mode-active" : ""}`}>
+      <main
+        className={`main-container ${
+          rightPanelView === "news" && !isClosingNews ? "news-mode-active" : ""
+        }`}
+      >
         {/* Left Column: Tear-off Sheet */}
         <section className="left-section">
           <CalendarSheet
@@ -123,10 +146,8 @@ export const App: React.FC = () => {
             hasNext={!!nextPublishedDate}
             onOpenLightbox={(url) => setLightboxUrl(url)}
             animating={animating}
-            onToggleNewsView={() =>
-              setRightPanelView(rightPanelView === "calendar" ? "news" : "calendar")
-            }
-            isNewsViewOpen={rightPanelView === "news"}
+            onToggleNewsView={handleToggleNewsView}
+            isNewsViewOpen={rightPanelView === "news" && !isClosingNews}
           />
         </section>
 
@@ -137,7 +158,8 @@ export const App: React.FC = () => {
               currentDateStr={selectedDateStr}
               newsItems={currentIssue?.news || []}
               title={currentIssue?.title}
-              onClose={() => setRightPanelView("calendar")}
+              onClose={handleCloseNews}
+              isClosing={isClosingNews}
             />
           ) : (
             <MonthGrid
