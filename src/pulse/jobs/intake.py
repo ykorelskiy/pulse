@@ -64,16 +64,17 @@ async def run_intake_job() -> int:
     scored_count = 0
     if pending:
         logger.info("scoring_pending_news", count=len(pending))
-        for item in pending:
-            try:
-                sc_res = await curator.score_news_item(item)
-                if sc_res:
+        try:
+            scored_results = curator.score_batch(pending)
+            for sc_res in scored_results:
+                item_id = sc_res.get("id")
+                if item_id:
                     status = "rejected_victims" if sc_res.get("has_victims") else "scored"
                     update_data = {**sc_res, "status": status}
-                    repo.update_scored_article(item["id"], update_data)
+                    repo.update_scored_article(item_id, update_data)
                     scored_count += 1
-            except Exception as e:
-                logger.error("news_item_scoring_failed", item_id=item.get("id"), error=str(e))
+        except Exception as e:
+            logger.error("batch_scoring_failed", error=str(e))
 
     logger.info("intake_scoring_completed", scored_count=scored_count)
 
