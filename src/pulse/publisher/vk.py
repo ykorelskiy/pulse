@@ -1,10 +1,12 @@
 """VKontakte community publisher implementing native wall photo posting via VK API v5.199."""
 
 import asyncio
+import io
 from pathlib import Path
 from typing import Any
 
 import httpx
+from PIL import Image
 
 from pulse.config import get_config
 from pulse.logging import get_logger
@@ -32,7 +34,7 @@ class VKPublisher:
         news_items: list[dict[str, Any]],
         site_url: str = "http://192.109.206.42:8081",
     ) -> str:
-        """Format 15 news items with clickable links for VK post.
+        """Format 15 news items with clickable source links for VK wall post.
 
         Args:
             date_str: Date string YYYY-MM-DD.
@@ -49,22 +51,23 @@ class VKPublisher:
             f"🖼 ПУЛЬС ДНЯ — {formatted_date}",
             "",
             "📌 Главные позитивные новости дня:",
+            "",
         ]
 
         if news_items:
             for idx, item in enumerate(news_items[:15], 1):
-                text = item.get("text") or item.get("ru_headline") or item.get("headline", "")
-                url = item.get("url", "")
+                headline = item.get("text") or item.get("ru_headline") or item.get("headline", "")
+                url = item.get("url") or item.get("link", "")
+                
                 if url:
-                    lines.append(f"{idx}. {text}\n🔗 {url}")
+                    lines.append(f"{idx}. {headline}\n🔗 {url}\n")
                 else:
-                    lines.append(f"{idx}. {text}")
+                    lines.append(f"{idx}. {headline}\n")
         else:
-            lines.append("Ежедневный выпуск отрывного календаря.")
+            lines.append("Ежедневный выпуск отрывного календаря.\n")
 
-        lines.append("")
-        lines.append(f"📅 Интерактивный отрывной календарь: {site_url}/{y}/{m}/{d}")
-        lines.append("💬 Канал в Telegram: https://t.me/a_daily_pulse")
+        lines.append(f"📅 Интерактивный календарь: {site_url}/{y}/{m}/{d}")
+        lines.append("💬 Telegram-канал: https://t.me/a_daily_pulse")
 
         return "\n".join(lines)
 
@@ -87,15 +90,12 @@ class VKPublisher:
 
         gid = abs(int(self.group_id))
 
-        async with httpx.AsyncClient(timeout=30.0) as client:
+        async with httpx.AsyncClient(timeout=90.0) as client:
             photo_attachment_id: str | None = None
 
-            # Attempt photo upload if image provided
+            # 1. Prepare and optimize photo
             if image_input:
                 try:
-                    import io
-                    from PIL import Image
-
                     raw_bytes: bytes
                     if isinstance(image_input, bytes):
                         raw_bytes = image_input
@@ -106,15 +106,16 @@ class VKPublisher:
                     else:
                         raw_bytes = Path(image_input).read_bytes()
 
-                    # Convert WebP/PNG/etc. to real JPEG for VK API compliance
+                    # Convert WebP/PNG/etc. to optimized JPEG for VK API compliance
                     img = Image.open(io.BytesIO(raw_bytes)).convert("RGB")
-                    if img.width > 2048 or img.height > 2048:
-                        img.thumbnail((2048, 2048))
+                    if img.width > 1600 or img.height > 1600:
+                        img.thumbnail((1600, 1600))
                     jpeg_io = io.BytesIO()
-                    img.save(jpeg_io, format="JPEG", quality=92)
+                    img.save(jpeg_io, format="JPEG", quality=88, optimize=True)
                     jpeg_bytes = jpeg_io.getvalue()
+                    logger.info("vk_image_converted_to_jpeg", size_bytes=len(jpeg_bytes))
 
-                    # 1. Get Wall Upload Server URL
+                    # 2. Get Wall Upload Server URL
                     upload_server_url = "https://api.vk.com/method/photos.getWallUploadServer"
                     params = {
                         "group_id": gid,
@@ -124,45 +125,56 @@ class VKPublisher:
                     res_server = await client.get(upload_server_url, params=params)
                     data_server = res_server.json()
 
-                    if "response" in data_server and "upload_url" in data_server["response"]:
-                        upload_url = data_server["response"]["upload_url"]
-
-                        # 2. Upload JPEG photo bytes to VK Upload Server
-                        files = {"photo": ("cover.jpg", jpeg_bytes, "image/jpeg")}
-                        res_upload = await client.post(upload_url, files=files)
-                        upload_result = res_upload.json()
-
-                        if upload_result.get("photo") and upload_result.get("photo") != "[]":
-                            # 3. Save Wall Photo
-                            save_url = "https://api.vk.com/method/photos.saveWallPhoto"
-                            save_params = {
-                                "group_id": gid,
-                                "photo": upload_result["photo"],
-                                "server": upload_result["server"],
-                                "hash": upload_result["hash"],
-                                "access_token": self.access_token,
-                                "v": VK_API_VERSION,
-                            }
-                            res_save = await client.post(save_url, data=save_params)
-                            data_save = res_save.json()
-
-                            if "response" in data_save and len(data_save["response"]) > 0:
-                                saved_photo = data_save["response"][0]
-                                owner_id = saved_photo.get("owner_id")
-                                photo_id = saved_photo.get("id")
-                                access_key = saved_photo.get("access_key")
-
-                                photo_attachment_id = f"photo{owner_id}_{photo_id}"
-                                if access_key:
-                                    photo_attachment_id += f"_{access_key}"
-
-                    else:
+                    if "response" not in data_server or "upload_url" not in data_server["response"]:
                         err_msg = data_server.get("error", {}).get("error_msg", str(data_server))
-                        logger.warning("vk_photo_upload_skipped_due_to_scope", error=err_msg)
-                except Exception as e:
-                    logger.warning("vk_photo_upload_failed_fallback_to_text", error=str(e))
+                        logger.error("vk_get_upload_server_failed", error=err_msg)
+                        raise RuntimeError(f"VK photos.getWallUploadServer failed: {err_msg}")
 
-            # 4. Post to Community Wall
+                    upload_url = data_server["response"]["upload_url"]
+
+                    # 3. Upload JPEG photo bytes to VK Upload Server
+                    files = {"photo": ("cover.jpg", jpeg_bytes, "image/jpeg")}
+                    res_upload = await client.post(upload_url, files=files)
+                    upload_result = res_upload.json()
+
+                    if not upload_result.get("photo") or upload_result.get("photo") == "[]":
+                        logger.error("vk_upload_server_empty_photo", response=upload_result)
+                        raise RuntimeError("VK Upload Server returned empty photo field.")
+
+                    # 4. Save Wall Photo
+                    save_url = "https://api.vk.com/method/photos.saveWallPhoto"
+                    save_params = {
+                        "group_id": gid,
+                        "photo": upload_result["photo"],
+                        "server": upload_result["server"],
+                        "hash": upload_result["hash"],
+                        "access_token": self.access_token,
+                        "v": VK_API_VERSION,
+                    }
+                    res_save = await client.post(save_url, data=save_params)
+                    data_save = res_save.json()
+
+                    if "response" not in data_save or len(data_save["response"]) == 0:
+                        err_msg = data_save.get("error", {}).get("error_msg", str(data_save))
+                        logger.error("vk_save_wall_photo_failed", error=err_msg)
+                        raise RuntimeError(f"VK photos.saveWallPhoto failed: {err_msg}")
+
+                    saved_photo = data_save["response"][0]
+                    owner_id = saved_photo.get("owner_id")
+                    photo_id = saved_photo.get("id")
+                    access_key = saved_photo.get("access_key")
+
+                    photo_attachment_id = f"photo{owner_id}_{photo_id}"
+                    if access_key:
+                        photo_attachment_id += f"_{access_key}"
+
+                    logger.info("vk_photo_uploaded_attachment_id", attachment_id=photo_attachment_id)
+
+                except Exception as e:
+                    logger.error("vk_photo_upload_critical_error", error=str(e))
+                    raise RuntimeError(f"Не удалось загрузить обложку плаката в ВК: {e}")
+
+            # 5. Post to Community Wall
             post_url = "https://api.vk.com/method/wall.post"
             post_params: dict[str, Any] = {
                 "owner_id": -gid,
