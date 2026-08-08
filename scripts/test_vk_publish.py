@@ -7,7 +7,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from pulse.publisher.vk import VKPublisher
 
-TEST_TOKEN = "vk1.a.f_K4vBnPCJKBlZHNC1RXGjaN5XUUzq4s8GSFcY-5sZz2oQye8LHZP-EMe-7UMahFK2e5_ic4cOjd6990Dpq4MZaGqnQboNHzEj2PdqSZLyGfmUQyvvjLXktwe84ScgoyBS1oh7C8NtkYbMQyNA7WInSM58r7NeufZ3nViJ4PburhaEAcG_lhLPXO-YMJREsph2VlCglJGFPTx8C_1dlCsg"
+TEST_TOKEN = "vk1.a.grjrIHF_mOj4uurpywibmXzfun43K5sJfMCDZR0jEvVuP8nn0bcMeD-Jef3wVmay_cuQRu6sZru78F4dBJZe8klAVYUfIt41L_AYYvE7NNgnGfTJ-W6LgT4rID35T0KDfutC_QIovrlqyQxjCTzl87z8LbBSs2yyTOPLEXHV4fnCwf3KYyWy_MVLMTEgTbSqB-8nZ-2mgw7jBM94jOZf9w"
 TEST_GROUP_ID = 240745088
 
 
