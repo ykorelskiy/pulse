@@ -37,6 +37,11 @@ async def run_auto_publish() -> None:
         logger.info("no_cover_uploaded_skipping_publish", date=today_str)
         return
 
+    # Check if issue was already published today
+    if row.get("status") == "published":
+        logger.info("issue_already_published_skipping_duplicate", date=today_str)
+        return
+
     # Build image URL
     img_url = f"https://zyoznyeqvorhztrpgdjw.supabase.co/storage/v1/object/public/pulse-covers/{image_path}"
     news_items: list[dict[str, Any]] = row.get("news") or []
@@ -51,6 +56,17 @@ async def run_auto_publish() -> None:
         news_items=news_items,
         title=title,
     )
+
+    # Mark issue as published in DB
+    try:
+        from datetime import timezone
+        client.table("site_issues").update({
+            "published": True,
+            "status": "published",
+            "published_at": datetime.now(timezone.utc).isoformat(),
+        }).eq("issue_date", today_str).execute()
+    except Exception as e:
+        logger.error("failed_updating_published_status_in_db", error=str(e))
 
     # Send report to admin
     target_chat_id = cfg.ADMIN_CHAT_ID
