@@ -25,9 +25,9 @@ VICTIMS_KEYWORDS = [
 
 PRIORITY_VIRAL_KEYWORDS = [
     "вентилятор", "индийск", "кайман", "пенсионерк", "день пива", "пива",
-    "нида", "протаранил", "зубы дракона", "литов", "человек-паук",
-    "хиросим", "gta", "носорог", "зеркал", "ураган", "ведьмак",
-    "anthropic", "пончик", "кенгуру", "особняк", "белый дом",
+    "протаранил", "зубы дракона", "человек-паук",
+    "gta", "носорог", "зеркал", "ведьмак",
+    "anthropic", "пончик", "кенгуру", "особняк",
     "шоссе", "инди", "openai", "ванной"
 ]
 
@@ -88,8 +88,10 @@ class LLMCurator:
             "   - ПРАВИЛО НЕОПРЕДЕЛЕННОСТИ: Если из заголовка НЕЯСНО, есть ли пострадавшие — ставь true!\n"
             "3. `relevance` (1-5): Насколько новость интересна и понятна массовому читателю из РФ и СНГ.\n"
             "4. `comedic_potential` (1-5): Потенциал абсурда, юмора, курьеза или неловкости (захочется переслать другу).\n"
+            "   - Природные бедствия, ураганы, наводнения, пожары и режимы ЧС НЕ ИМЕЮТ ЮМОРА (comedic_potential = 1)!\n"
             "5. `significance` (1-5): Глобальный или общенациональный масштаб события.\n"
-            "6. `tone` (-1, 0, +1): Тон новости (-1 = гнетущая/мрачная, 0 = нейтральная, +1 = светлая/позитивная).\n\n"
+            "6. `tone` (-1, 0, +1): Тон новости (-1 = гнетущая/мрачная, 0 = нейтральная, +1 = светлая/позитивная).\n"
+            "   - Для ЧП и бедствий (ураганы, режим ЧС) ставь tone = -1!\n\n"
             "Верни строго JSON-массив объектов следующей структуры:\n"
             "[\n"
             "  {\n"
@@ -152,13 +154,17 @@ class LLMCurator:
             # Check victims
             has_victims = any(k in h.lower() for k in VICTIMS_KEYWORDS)
 
+            # Check disasters
+            disaster_kw = ["ураган", "шторм", "наводнени", "режим чс", "затопл", "засух"]
+            is_disaster = any(k in h.lower() for k in disaster_kw)
+
             # Check priority viral
-            is_viral = any(k in h.lower() for k in PRIORITY_VIRAL_KEYWORDS)
+            is_viral = any(k in h.lower() for k in PRIORITY_VIRAL_KEYWORDS) and not is_disaster
 
             rel = 4 if not is_english(h) else 2
-            comedic = 5 if is_viral else (3 if "вирус" in h.lower() else 2)
-            sig = 2
-            tone = -1 if has_victims else (1 if is_viral else 0)
+            comedic = 1 if is_disaster else (5 if is_viral else 2)
+            sig = 3 if is_disaster else 2
+            tone = -1 if (has_victims or is_disaster) else (1 if is_viral else 0)
 
             results.append({
                 "id": item_id,
