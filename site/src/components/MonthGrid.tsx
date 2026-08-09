@@ -117,6 +117,7 @@ export const MonthGrid: React.FC<MonthGridProps> = ({
           const issue = issuesMap[cell.dateStr];
           const thumbUrl = issue?.thumb128_path ? getPublicStorageUrl(issue.thumb128_path) : "";
           const isSelected = cell.dateStr === selectedDateStr;
+          const isToday = cell.dateStr === mskToday;
           const redDate = isRedDate(cell.dateStr);
 
           return (
@@ -131,8 +132,8 @@ export const MonthGrid: React.FC<MonthGridProps> = ({
                 }
               }}
             >
-              {/* Red handwritten crayon circle overlay for selected/today */}
-              {isSelected && (
+              {/* Red handwritten crayon circle overlay strictly for TODAY */}
+              {isToday && (
                 <svg className="handwritten-circle-svg" viewBox="0 0 100 100" preserveAspectRatio="none">
                   <path
                     d="M 10 48 C 6 18, 28 4, 55 6 C 84 8, 96 26, 94 56 C 92 84, 64 96, 32 94 C 10 90, 4 64, 16 42"
@@ -142,14 +143,6 @@ export const MonthGrid: React.FC<MonthGridProps> = ({
                     strokeLinecap="round"
                     className="crayon-stroke-path"
                   />
-                </svg>
-              )}
-
-              {/* Hand-drawn rough RED pencil cross for empty past dates */}
-              {cell.state === "empty_past" && (
-                <svg className="pencil-cross-svg" viewBox="0 0 100 100" preserveAspectRatio="none">
-                  <path d="M 14 16 Q 48 50 86 84" fill="none" stroke="#dc2626" strokeWidth="4.5" strokeLinecap="round" opacity="0.85" />
-                  <path d="M 84 18 Q 52 48 16 82" fill="none" stroke="#dc2626" strokeWidth="4.5" strokeLinecap="round" opacity="0.85" />
                 </svg>
               )}
 
