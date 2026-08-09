@@ -131,54 +131,66 @@ export const App: React.FC = () => {
 
   return (
     <div className="app-root">
-      {/* Main Grid Content (Unified Natural Scroll) */}
-      <main
-        className={`main-container ${
-          rightPanelView === "news" && !isClosingNews ? "news-mode-active" : ""
-        }`}
-      >
-        {/* Left Column: Tear-off Sheet */}
-        <section className="left-section">
-          <CalendarSheet
-            currentDateStr={selectedDateStr}
-            issue={currentIssue}
-            issueNumber={issueNumber}
-            onPrev={handlePrev}
-            onNext={handleNext}
-            hasPrev={!!prevPublishedDate}
-            hasNext={!!nextPublishedDate}
-            onOpenLightbox={(url) => setLightboxUrl(url)}
-            animating={animating}
-            onToggleNewsView={handleToggleNewsView}
-            isNewsViewOpen={rightPanelView === "news" && !isClosingNews}
-          />
-        </section>
-
-        {/* Right Column: Month Calendar Grid OR News List Panel */}
-        <section className="right-section">
-          {rightPanelView === "news" ? (
-            <NewsListPanel
+      <div className="massive-wood-base">
+        {/* Main Grid Content (Unified Natural Scroll) */}
+        <main
+          className={`main-container ${
+            rightPanelView === "news" && !isClosingNews ? "news-mode-active" : ""
+          }`}
+        >
+          {/* Left Column: Tear-off Sheet */}
+          <section className="left-section">
+            <CalendarSheet
               currentDateStr={selectedDateStr}
-              newsItems={currentIssue?.news || []}
-              title={currentIssue?.title}
-              onClose={handleCloseNews}
-              isClosing={isClosingNews}
+              issue={currentIssue}
+              issueNumber={issueNumber}
+              onPrev={handlePrev}
+              onNext={handleNext}
+              hasPrev={!!prevPublishedDate}
+              hasNext={!!nextPublishedDate}
+              onOpenLightbox={(url) => setLightboxUrl(url)}
+              animating={animating}
+              onToggleNewsView={handleToggleNewsView}
+              isNewsViewOpen={rightPanelView === "news" && !isClosingNews}
             />
-          ) : (
-            <MonthGrid
-              currentYear={currentYear}
-              currentMonth={currentMonth}
-              issuesMap={issuesMap}
-              selectedDateStr={selectedDateStr}
-              onSelectDate={(d) => navigateToDate(d)}
-              onPrevMonth={handlePrevMonth}
-              onNextMonth={handleNextMonth}
-              canPrevMonth={currentYear > 2026 || (currentYear === 2026 && currentMonth > 6)}
-              canNextMonth={true}
-            />
-          )}
-        </section>
-      </main>
+          </section>
+
+          {/* Right Column: Month Calendar Grid OR News List Panel */}
+          <section className="right-section">
+            {rightPanelView === "news" ? (
+              <NewsListPanel
+                currentDateStr={selectedDateStr}
+                newsItems={currentIssue?.news || []}
+                title={currentIssue?.title}
+                onClose={handleCloseNews}
+                isClosing={isClosingNews}
+              />
+            ) : (
+              <MonthGrid
+                currentYear={currentYear}
+                currentMonth={currentMonth}
+                issuesMap={issuesMap}
+                selectedDateStr={selectedDateStr}
+                onSelectDate={(d) => navigateToDate(d)}
+                onPrevMonth={handlePrevMonth}
+                onNextMonth={handleNextMonth}
+                canPrevMonth={currentYear > 2026 || (currentYear === 2026 && currentMonth > 6)}
+                canNextMonth={true}
+              />
+            )}
+          </section>
+        </main>
+        
+        {/* Brass Social Buttons */}
+        <div className="social-brass-buttons">
+          <a href="https://t.me/pulse_dnya" target="_blank" rel="noreferrer" className="brass-square-btn" title="Telegram Пульс Дня">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="brass-icon"><path d="m15 10-4 4 6 6 4-16-18 7 4 2 2 6 3-4"></path></svg>
+          </a>
+          <a href="https://vk.com/pulse_dnya" target="_blank" rel="noreferrer" className="brass-square-btn vk-btn" title="ВКонтакте Пульс Дня">
+            <span className="vk-text">VK</span>
+          </a>
+        </div>
+      </div>
 
       {/* Lightbox Modal */}
       {lightboxUrl && (
