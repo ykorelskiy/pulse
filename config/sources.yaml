@@ -1,63 +1,63 @@
 sources:
   # Категория А: RU — главные ленты и ТОП-агрегаторы
   - id: yandex_news
-    name: "Интерфакс — Главные новости"
+    name: "Интерфакс"
     url: "https://www.interfax.ru/rss.asp"
     category: "ru_news"
     weight: 0.20
     enabled: false
 
   - id: rambler_news
-    name: "Рамблер Новости — Главные события"
+    name: "Рамблер"
     url: "https://news.rambler.ru/rss/head/"
     category: "ru_news"
     weight: 0.20
     enabled: false
 
   - id: rbc_news
-    name: "РБК — Главные новости"
+    name: "РБК"
     url: "https://rssexport.rbc.ru/rbcnews/news/30/full.rss"
     category: "ru_news"
     weight: 0.20
     enabled: false
 
   - id: lenta_news
-    name: "Лента.ру — Новости"
+    name: "Лента.ру"
     url: "https://lenta.ru/rss"
     category: "ru_news"
     weight: 0.20
     enabled: true
 
   - id: ria_news
-    name: "РИА Новости — Главное"
+    name: "РИА Новости"
     url: "https://ria.ru/export/rss2/archive/index.xml"
     category: "ru_news"
     weight: 0.20
     enabled: false
 
   - id: rt_russian
-    name: "RT на русском — Главные новости"
+    name: "RT на русском"
     url: "https://russian.rt.ru/rss"
     category: "ru_news"
     weight: 0.20
     enabled: false
 
   - id: gazeta_politics
-    name: "Газета.Ru — Политика"
+    name: "Газета.Ru"
     url: "https://www.gazeta.ru/export/rss/politics.xml"
     category: "ru_news"
     weight: 0.20
     enabled: false
 
   - id: tass_news
-    name: "ТАСС — Главные новости"
+    name: "ТАСС"
     url: "https://tass.ru/rss/v2.xml"
     category: "ru_news"
     weight: 0.20
     enabled: false
 
   - id: kommersant_news
-    name: "Коммерсантъ — Новости"
+    name: "Коммерсантъ"
     url: "https://www.kommersant.ru/RSS/news.xml"
     category: "ru_news"
     weight: 0.20
@@ -65,7 +65,7 @@ sources:
 
   # Категория Б: RU — «горячее»/скандальное/таблоид/эксклюзивы
   - id: mash_telegram
-    name: "Mash — Эксклюзивы и расследования"
+    name: "Mash"
     type: "telegram"
     channel_name: "mash"
     url: "https://t.me/s/mash"
@@ -74,7 +74,7 @@ sources:
     enabled: true
 
   - id: fontanka_telegram
-    name: "Фонтанка.ру — Главные новости Петербурга"
+    name: "Фонтанка.ру"
     type: "telegram"
     channel_name: "fontankaspb"
     url: "https://t.me/s/fontankaspb"
@@ -83,7 +83,7 @@ sources:
     enabled: false
 
   - id: readovka_telegram
-    name: "Readovka — Острые темы"
+    name: "Readovka"
     type: "telegram"
     channel_name: "readovkanews"
     url: "https://t.me/s/readovkanews"
@@ -92,7 +92,7 @@ sources:
     enabled: true
 
   - id: baza_telegram
-    name: "Baza — Эксклюзивы"
+    name: "Baza"
     type: "telegram"
     channel_name: "bazabazon"
     url: "https://t.me/s/bazabazon"
@@ -101,28 +101,28 @@ sources:
     enabled: true
 
   - id: life_news
-    name: "Life.ru — Происшествия и эксклюзивы"
+    name: "Life.ru"
     url: "https://life.ru/rss"
     category: "ru_hot"
     weight: 0.30
     enabled: true
 
   - id: starhit_showbiz
-    name: "StarHit — Светская хроника"
+    name: "StarHit"
     url: "https://www.starhit.ru/rss/"
     category: "ru_hot"
     weight: 0.30
     enabled: false
 
   - id: sevendays_showbiz
-    name: "7Дней.ру — Скандалы и шоу-бизнес"
+    name: "7Дней.ру"
     url: "https://7days.ru/rss"
     category: "ru_hot"
     weight: 0.30
     enabled: false
 
   - id: kp_all
-    name: "Комсомольская правда — Происшествия и скандалы"
+    name: "Комсомольская правда"
     type: "telegram"
     channel_name: "kpru"
     url: "https://t.me/s/kpru"
@@ -132,28 +132,28 @@ sources:
 
   # Категория Ж: Спорт
   - id: sports_ru
-    name: "Sports.ru — Главные новости спорта"
+    name: "Sports.ru"
     url: "https://www.sports.ru/rss/all_news.xml"
     category: "sports"
     weight: 0.10
     enabled: false
 
   - id: championat_com
-    name: "Чемпионат — Главное в спорте"
+    name: "Чемпионат"
     url: "https://www.championat.com/rss/news/"
     category: "sports"
     weight: 0.10
     enabled: false
 
   - id: match_tv
-    name: "Матч ТВ — Новости спорта"
+    name: "Матч ТВ"
     url: "https://matchtv.ru/news/rss"
     category: "sports"
     weight: 0.10
     enabled: false
 
   - id: rbc_sport
-    name: "Спорт-Экспресс — Главные новости спорта"
+    name: "Спорт-Экспресс"
     url: "https://www.sport-express.ru/services/materials/news/se/"
     category: "sports"
     weight: 0.10
@@ -161,14 +161,14 @@ sources:
 
   # Категория В: Международные курьёзы/таблоиды
   - id: tmz_gossip
-    name: "TMZ — Entertainment & Celebrity News"
+    name: "TMZ"
     url: "https://www.tmz.com/rss.xml"
     category: "world_tabloid"
     weight: 0.15
     enabled: false
 
   - id: pagesix_gossip
-    name: "Page Six — Celebrity Gossip"
+    name: "Page Six"
     url: "https://pagesix.com/feed"
     category: "world_tabloid"
     weight: 0.15
@@ -176,14 +176,14 @@ sources:
 
   # Категория Г: Мировая политика
   - id: bbc_world
-    name: "BBC News — World"
+    name: "BBC News"
     url: "https://feeds.bbci.co.uk/news/world/rss.xml"
     category: "world_politics"
     weight: 0.00
     enabled: false
 
   - id: guardian_world
-    name: "The Guardian — World News"
+    name: "The Guardian"
     url: "https://www.theguardian.com/world/rss"
     category: "world_politics"
     weight: 0.00
@@ -191,14 +191,14 @@ sources:
 
   # Категория Д: Сигнал вирусности
   - id: google_trends_ru
-    name: "Google Trends Russia"
+    name: "Google Trends"
     url: "https://trends.google.com/trending/rss?geo=RU"
     category: "viral_trends"
     weight: 0.20
     enabled: false
 
   - id: reddit_nottheonion
-    name: "Reddit — r/nottheonion"
+    name: "Reddit"
     url: "https://www.reddit.com/r/nottheonion/.rss"
     category: "viral_trends"
     weight: 0.20
@@ -206,28 +206,28 @@ sources:
 
   # Категория Е: Технологии и наука
   - id: habr_top
-    name: "Хабр — Лучшее за сутки"
+    name: "Хабр"
     url: "https://habr.com/ru/rss/best/daily/?fl=ru"
     category: "tech"
     weight: 0.05
     enabled: false
 
   - id: techcrunch
-    name: "TechCrunch — Новости технологий"
+    name: "TechCrunch"
     url: "https://techcrunch.com/feed"
     category: "tech"
     weight: 0.05
     enabled: true
 
   - id: threednews
-    name: "3DNews — Новости технологий"
+    name: "3DNews"
     url: "https://3dnews.ru/news/rss/"
     category: "tech"
     weight: 0.05
     enabled: true
 
   - id: calend_ru
-    name: "Календарь праздников"
+    name: "Calend.ru"
     url: "https://www.calend.ru/rss/calend.rss"
     category: "lifestyle"
     weight: 0.10

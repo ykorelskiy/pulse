@@ -138,8 +138,8 @@ def process_and_upload_cover(
                 item_copy = dict(item)
                 if not item_copy.get("text"):
                     item_copy["text"] = item_copy.get("headline") or item_copy.get("ru_headline") or item_copy.get("summary") or ""
-                if not item_copy.get("source"):
-                    item_copy["source"] = item_copy.get("source_name") or "Источник"
+                raw_src = item_copy.get("source") or item_copy.get("source_name") or "Источник"
+                item_copy["source"] = raw_src.split(" — ")[0].split(" - ")[0].strip()
                 normalized_news.append(item_copy)
             else:
                 normalized_news.append(item)

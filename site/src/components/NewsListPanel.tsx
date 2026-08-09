@@ -11,6 +11,13 @@ interface NewsListPanelProps {
   isClosing?: boolean;
 }
 
+function getShortSourceLabel(rawSource?: string, rawSourceName?: string): string {
+  const raw = (rawSource || rawSourceName || "Источник").trim();
+  const cleaned = raw.split(/\s*[\u2014\u2013-]\s*/)[0].trim();
+  if (cleaned === "Календарь праздников") return "Calend.ru";
+  return cleaned || "Источник";
+}
+
 export const NewsListPanel: React.FC<NewsListPanelProps> = ({
   currentDateStr,
   newsItems,
@@ -63,7 +70,7 @@ export const NewsListPanel: React.FC<NewsListPanelProps> = ({
             ).trim();
             const targetUrl = item.url || item.source_url;
             const hasUrl = !!targetUrl;
-            const sourceLabel = item.source || item.source_name || "Источник";
+            const sourceLabel = getShortSourceLabel(item.source, item.source_name);
             const RowWrapper = hasUrl ? "a" : "div";
             const rowProps = hasUrl
               ? {
