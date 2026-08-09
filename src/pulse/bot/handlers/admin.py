@@ -187,9 +187,9 @@ async def send_full_post_preview(
     )
 
     [y, m, d] = target_date.split("-")
-    short_caption = f"🖼 **ПУЛЬС ДНЯ — {d}.{m}.{y}**"
+    short_caption = f"**ПУЛЬС ДНЯ — {d}.{m}.{y}**"
     text_body = caption
-    if text_body.startswith("🖼 **ПУЛЬС ДНЯ"):
+    if text_body.startswith("**ПУЛЬС ДНЯ") or text_body.startswith("🖼 **ПУЛЬС ДНЯ"):
         lines = text_body.split("\n", 2)
         text_body = lines[-1].lstrip()
 

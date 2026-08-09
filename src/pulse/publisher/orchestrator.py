@@ -44,7 +44,7 @@ class MultiPublisherOrchestrator:
             else:
                 lines = caption.split("\n")
                 header = lines[0]
-                short_caption = f"🖼 **{header}**"
+                short_caption = header
                 text_body = caption
                 if text_body.startswith(header):
                     text_body = text_body[len(header):].lstrip()

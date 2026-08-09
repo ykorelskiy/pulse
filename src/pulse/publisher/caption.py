@@ -32,7 +32,7 @@ class CaptionBuilder:
         [year, month, day] = date_str.split("-")
 
         lines = []
-        lines.append(f"🖼 **ПУЛЬС ДНЯ — {formatted_date}**")
+        lines.append(f"**ПУЛЬС ДНЯ — {formatted_date}**")
         lines.append("")
         lines.append("📌 **Главные позитивные новости дня:**")
 
@@ -85,7 +85,7 @@ class CaptionBuilder:
 
         lines = []
         # Zero-width space link to image forces Telegram to render photo preview card on top
-        lines.append(f'<a href="{image_url}">&#8203;</a><b>🖼 ПУЛЬС ДНЯ — {formatted_date}</b>')
+        lines.append(f'<a href="{image_url}">&#8203;</a><b>ПУЛЬС ДНЯ — {formatted_date}</b>')
         lines.append("")
         lines.append("📌 <b>Главные позитивные новости дня:</b>")
 

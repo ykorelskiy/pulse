@@ -48,7 +48,7 @@ class VKPublisher:
         formatted_date = f"{d}.{m}.{y}"
 
         lines = [
-            f"🖼 ПУЛЬС ДНЯ — {formatted_date}",
+            f"ПУЛЬС ДНЯ — {formatted_date}",
             "",
             "📌 Главные позитивные новости дня:",
         ]
