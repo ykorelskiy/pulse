@@ -1033,3 +1033,63 @@ body {
   font-weight: 700;
   color: var(--paper-bg);
 }
+
+/* ------------------------------------------------------------- */
+/* Mobile Responsiveness & Adaptive Optimization                 */
+/* ------------------------------------------------------------- */
+@media (max-width: 640px) {
+  .main-container {
+    padding: 16px 10px;
+    gap: 20px;
+  }
+
+  .month-grid-container {
+    padding: 16px 12px;
+    min-height: auto;
+    border-radius: 10px;
+  }
+
+  .month-header {
+    margin-bottom: 14px;
+    padding-bottom: 8px;
+  }
+
+  .month-title {
+    font-size: 28px;
+  }
+
+  .month-nav-btn {
+    width: 36px;
+    height: 36px;
+  }
+
+  .weekday-grid {
+    gap: 4px;
+    margin-bottom: 8px;
+  }
+
+  .weekday-label {
+    font-size: 18px;
+  }
+
+  .days-grid {
+    gap: 5px;
+  }
+
+  .cell-day-num {
+    font-size: 20px;
+  }
+
+  .cell-num-badge {
+    font-size: 12px;
+    padding: 0 4px;
+    top: 2px;
+    left: 2px;
+  }
+
+  .news-panel-container {
+    padding: 14px 12px;
+    height: auto;
+    max-height: 85vh;
+  }
+}
