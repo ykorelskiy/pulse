@@ -121,6 +121,15 @@ def process_and_upload_cover(
         except Exception as e:
             logger.warning("storage_upload_warning", path=p, error=str(e))
 
+    # If news_data not provided, try to preserve existing news from DB if present
+    if news_data is None:
+        try:
+            existing = client.table("site_issues").select("news").eq("issue_date", target_date_str).execute()
+            if existing.data and existing.data[0].get("news"):
+                news_data = existing.data[0]["news"]
+        except Exception as e:
+            logger.warning("fetch_existing_news_for_cover_warning", error=str(e))
+
     # Upsert site_issues table row
     issue_payload = {
         "issue_date": target_date_str,

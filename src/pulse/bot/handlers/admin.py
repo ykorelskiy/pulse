@@ -237,17 +237,37 @@ async def cmd_process_photo(message: types.Message) -> None:
         downloaded = await bot.download_file(file_info.file_path)
         image_bytes = downloaded.read()
 
+        from pulse.db.client import get_supabase_client
+        client = get_supabase_client()
+
+        # Retrieve news items for this date if already stored, or rank top 15 news for today
+        news_data = None
+        try:
+            existing_res = client.table("site_issues").select("news").eq("issue_date", target_date).execute()
+            if existing_res.data and existing_res.data[0].get("news"):
+                news_data = existing_res.data[0]["news"]
+        except Exception as e:
+            logger.warning("fetch_existing_news_failed", error=str(e))
+
+        if not news_data:
+            try:
+                ranker = TopicRanker()
+                _, top_50, _ = ranker.get_top_curated_digest(items_per_category=10, top_k=10)
+                news_data = top_50[:15]
+            except Exception as e:
+                logger.error("ranker_fetch_failed_for_photo", error=str(e))
+                news_data = []
+
         res = process_and_upload_cover(
             image_bytes,
             target_date_str=target_date,
+            news_data=news_data,
             prompt=prompt_text,
             published=False,
         )
 
         logger.info("cover_3_sizes_processed_successfully", date=target_date, paths=res)
 
-        from pulse.db.client import get_supabase_client
-        client = get_supabase_client()
         row_res = client.table("site_issues").select("*").eq("issue_date", target_date).execute()
         rows = row_res.data or []
 
