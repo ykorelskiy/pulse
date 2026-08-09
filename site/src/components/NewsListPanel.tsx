@@ -1,12 +1,7 @@
 import React from "react";
 import { ArrowLeft, ExternalLink, Newspaper } from "lucide-react";
 import { getFormattedHeaderDate } from "../utils/dateUtils";
-
-interface NewsItem {
-  text: string;
-  url?: string;
-  source?: string;
-}
+import type { NewsItem } from "../types";
 
 interface NewsListPanelProps {
   currentDateStr: string;
@@ -59,11 +54,20 @@ export const NewsListPanel: React.FC<NewsListPanelProps> = ({
       {top15.length > 0 ? (
         <div className="news-items-clean-list">
           {top15.map((item, idx) => {
-            const hasUrl = !!item.url;
+            const newsText = (
+              item.text ||
+              item.headline ||
+              item.ru_headline ||
+              item.summary ||
+              ""
+            ).trim();
+            const targetUrl = item.url || item.source_url;
+            const hasUrl = !!targetUrl;
+            const sourceLabel = item.source || item.source_name || "Источник";
             const RowWrapper = hasUrl ? "a" : "div";
             const rowProps = hasUrl
               ? {
-                  href: item.url,
+                  href: targetUrl,
                   target: "_blank",
                   rel: "noopener noreferrer",
                   className: "news-clean-item clickable-news-row",
@@ -76,12 +80,12 @@ export const NewsListPanel: React.FC<NewsListPanelProps> = ({
               <RowWrapper key={idx} {...(rowProps as any)}>
                 <div className="news-content-left">
                   <span className="news-num-prefix">{idx + 1}.</span>
-                  <span className="news-clean-text">{item.text}</span>
+                  <span className="news-clean-text">{newsText}</span>
                 </div>
 
                 {hasUrl ? (
                   <span className="news-source-fixed-btn">
-                    <span>{item.source || "Источник"}</span>
+                    <span>{sourceLabel}</span>
                     <ExternalLink size={12} />
                   </span>
                 ) : (

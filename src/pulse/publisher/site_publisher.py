@@ -130,6 +130,20 @@ def process_and_upload_cover(
         except Exception as e:
             logger.warning("fetch_existing_news_for_cover_warning", error=str(e))
 
+    # Normalize news dicts to ensure both text & headline, source & source_name keys are present
+    normalized_news = []
+    if news_data:
+        for item in news_data:
+            if isinstance(item, dict):
+                item_copy = dict(item)
+                if not item_copy.get("text"):
+                    item_copy["text"] = item_copy.get("headline") or item_copy.get("ru_headline") or item_copy.get("summary") or ""
+                if not item_copy.get("source"):
+                    item_copy["source"] = item_copy.get("source_name") or "Источник"
+                normalized_news.append(item_copy)
+            else:
+                normalized_news.append(item)
+
     # Upsert site_issues table row
     issue_payload = {
         "issue_date": target_date_str,
@@ -137,7 +151,7 @@ def process_and_upload_cover(
         "thumb480_path": thumb480_path,
         "thumb128_path": thumb128_path,
         "title": title or f"Пульс дня — {dt.strftime('%d.%m.%Y')}",
-        "news": news_data or [],
+        "news": normalized_news,
         "prompt": prompt,
         "published": published,
         "published_at": datetime.now(timezone.utc).isoformat() if published else None,
