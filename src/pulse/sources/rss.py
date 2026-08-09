@@ -90,7 +90,11 @@ class RSSSourceAdapter(BaseSourceAdapter):
 
 
 class CalendRuAdapter(RSSSourceAdapter):
-    """Adapter that merges all daily holidays into a single news article."""
+    """Adapter that merges all daily holidays into a single news article.
+
+    Filters RSS entries by today's date (Moscow time, UTC+3) and merges
+    matching holidays into one combined headline.
+    """
 
     async def fetch_latest(self) -> list[NewsArticle]:
         articles = await super().fetch_latest()
@@ -98,25 +102,32 @@ class CalendRuAdapter(RSSSourceAdapter):
             return []
 
         import re
+        # Determine today's day-of-month in Moscow time (UTC+3)
+        moscow_now = datetime.now(timezone.utc) + __import__("datetime").timedelta(hours=3)
+        today_day = moscow_now.day
+        today_str = moscow_now.strftime("%Y-%m-%d")
+
+        # Filter: only entries whose headline starts with today's day number
         titles = []
         for a in articles:
-            clean = re.sub(r"^\d+\s*-\s*", "", a.headline).strip()
-            # limit to top 5 holidays to avoid giant headlines
-            if len(titles) < 5:
-                titles.append(clean)
-        
+            match = re.match(r"^(\d+)\s*-\s*(.+)", a.headline)
+            if match and int(match.group(1)) == today_day:
+                clean = match.group(2).strip()
+                if len(titles) < 5:
+                    titles.append(clean)
+
+        if not titles:
+            return []
+
         combined_headline = "Праздники сегодня: " + ", ".join(titles)
-        
-        # Make URL unique per day so the deduplicator doesn't block it tomorrow
-        date_str = articles[0].published_at.strftime("%Y-%m-%d") if articles[0].published_at else "today"
-        unique_url = f"https://www.calend.ru/?date={date_str}"
-        
+
         merged = NewsArticle(
             source_id=self.source_id,
             headline=combined_headline,
             summary="Сегодня отмечаются: " + ", ".join(titles),
-            url=unique_url,
-            published_at=articles[0].published_at,
+            url=f"https://www.calend.ru/?date={today_str}",
+            published_at=datetime.now(timezone.utc),
         )
         return [merged]
+
 

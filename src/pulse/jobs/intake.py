@@ -34,6 +34,16 @@ async def run_fetch_job() -> int:
     for adapter in enabled_adapters:
         try:
             articles = await adapter.fetch_latest()
+
+            # For calend_ru: delete all previous entries before saving the new one
+            if adapter.source_id == "calend_ru" and articles:
+                try:
+                    repo.client.table("news_items").delete().eq(
+                        "source_id", "calend_ru"
+                    ).execute()
+                except Exception:
+                    pass
+
             for art in articles:
                 headline = getattr(art, "headline", getattr(art, "title", ""))
                 if not headline:
