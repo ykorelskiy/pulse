@@ -772,18 +772,6 @@ body {
   justify-content: space-between;
 }
 
-.month-grid-container::before {
-  content: '';
-  position: absolute;
-  top: 14px;
-  right: 20px;
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  background: radial-gradient(circle at 35% 35%, #facc15 0%, #854d0e 100%);
-  box-shadow: 0 2px 6px rgba(0,0,0,0.9);
-}
-
 .month-header {
   display: flex;
   justify-content: space-between;
