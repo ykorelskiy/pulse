@@ -119,23 +119,12 @@ class TopicRanker:
             cid = str(item.get("cluster_id") or item.get("id"))
             breadth_score = min(len(cluster_sources.get(cid, {sid})), 5)
 
-            # Freshness score: 6 minus 1 per 4 hours
-            coll_at = item.get("collected_at")
-            hours_old = 0.0
-            if coll_at:
-                try:
-                    if isinstance(coll_at, str):
-                        dt = datetime.fromisoformat(coll_at.replace("Z", "+00:00"))
-                    else:
-                        dt = coll_at
-                    hours_old = (now - dt).total_seconds() / 3600.0
-                except Exception:
-                    hours_old = 0.0
+            # Freshness score: DISABLED FOR EXPERIMENT (until Aug 12, 2026)
+            # Was: freshness_score = max(0, 6 - int(hours_old / 4.0))
+            freshness_score = 0
 
-            freshness_score = max(0, 6 - int(hours_old / 4.0))
-
-            # Temporarily omit breadth_score as requested: Total = Quality + Freshness
-            total_score = quality_score + freshness_score
+            # Total = Quality score only (Freshness disabled)
+            total_score = quality_score
             item_copy = dict(item)
             item_copy["headline"] = headline
             item_copy["source_name"] = sname
