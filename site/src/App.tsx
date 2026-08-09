@@ -126,6 +126,8 @@ export const App: React.FC = () => {
   };
 
   const currentIssue = issuesMap[selectedDateStr];
+  const issueIndex = publishedDates.indexOf(selectedDateStr);
+  const issueNumber = issueIndex >= 0 ? issueIndex + 1 : null;
 
   return (
     <div className="app-root">
@@ -140,6 +142,7 @@ export const App: React.FC = () => {
           <CalendarSheet
             currentDateStr={selectedDateStr}
             issue={currentIssue}
+            issueNumber={issueNumber}
             onPrev={handlePrev}
             onNext={handleNext}
             hasPrev={!!prevPublishedDate}

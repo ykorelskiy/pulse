@@ -1,11 +1,12 @@
 import React, { useState } from "react";
 import { ChevronLeft, ChevronRight, Maximize2, FileText, ArrowRight } from "lucide-react";
-import { getFormattedHeaderDate, isRedDate } from "../utils/dateUtils";
+import { getFormattedHeaderDate, isRedDate, getMskTodayDateString } from "../utils/dateUtils";
 import { getPublicStorageUrl } from "../lib/supabase";
 
 interface CalendarSheetProps {
   currentDateStr: string;
   issue?: any;
+  issueNumber?: number | null;
   onPrev: () => void;
   onNext: () => void;
   hasPrev: boolean;
@@ -19,6 +20,7 @@ interface CalendarSheetProps {
 export const CalendarSheet: React.FC<CalendarSheetProps> = ({
   currentDateStr,
   issue,
+  issueNumber,
   onPrev,
   onNext,
   hasPrev,
@@ -29,6 +31,7 @@ export const CalendarSheet: React.FC<CalendarSheetProps> = ({
   isNewsViewOpen,
 }) => {
   const header = getFormattedHeaderDate(currentDateStr);
+  const mskToday = getMskTodayDateString();
   const [imgError, setImgError] = useState(false);
 
   React.useEffect(() => {
@@ -80,7 +83,7 @@ export const CalendarSheet: React.FC<CalendarSheetProps> = ({
               {header.dayOfWeekName.toUpperCase()}
             </div>
           </div>
-          <div className="week-badge">Выпуск {header.dayNum}</div>
+          {issueNumber ? <div className="week-badge">Выпуск {issueNumber}</div> : null}
         </div>
 
         {/* Poster / Illustration Section */}
@@ -106,7 +109,7 @@ export const CalendarSheet: React.FC<CalendarSheetProps> = ({
             <div className="cover-placeholder">
               <img src="/robot-mascot.jpg" alt="Робот Пульс Дня" className="mascot-placeholder-img" />
               <div className="placeholder-text">
-                {currentDateStr.endsWith("08-08") ? "Робот зарисовывает сегодня..." : "В этот день выпуска не было"}
+                {currentDateStr === mskToday ? "Робот зарисовывает сегодня..." : "В этот день выпуска не было"}
               </div>
             </div>
           )}
