@@ -104,7 +104,7 @@ async def cmd_top_news(message: types.Message) -> None:
     await message.answer(f"📊 **Формирую ТОП-{limit} позитивных новостей (дата выпуска: {target_date})...**")
 
     try:
-        ranker = TopicRanker()
+        ranker = TopicRanker(target_date_str=target_date)
         _, top_50, _ = ranker.get_top_curated_digest(items_per_category=10, top_k=50)
 
         lines = [
@@ -251,7 +251,7 @@ async def cmd_process_photo(message: types.Message) -> None:
 
         if not news_data:
             try:
-                ranker = TopicRanker()
+                ranker = TopicRanker(target_date_str=target_date)
                 _, top_50, _ = ranker.get_top_curated_digest(items_per_category=10, top_k=10)
                 news_data = top_50[:15]
             except Exception as e:
@@ -324,7 +324,7 @@ async def cmd_preview_post(message: types.Message) -> None:
             )
         else:
             # No cover image yet -> return latest 15 news items for today
-            ranker = TopicRanker()
+            ranker = TopicRanker(target_date_str=target_date)
             top_10, top_50, _ = ranker.get_top_curated_digest(items_per_category=10, top_k=10)
             builder = CaptionBuilder()
             news_caption = builder.build_caption(
@@ -361,7 +361,7 @@ async def cmd_prompt(message: types.Message) -> None:
         target_date = get_active_issue_date()
 
     try:
-        ranker = TopicRanker()
+        ranker = TopicRanker(target_date_str=target_date)
         _, top_50, _ = ranker.get_top_curated_digest(items_per_category=10, top_k=10)
         news_items = top_50[:15]
         

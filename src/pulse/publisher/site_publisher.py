@@ -41,8 +41,13 @@ def get_active_issue_date() -> str:
     return today_str
 
 
-def get_active_cycle_start_iso() -> str:
+def get_active_cycle_start_iso(target_date_str: str | None = None) -> str:
     """Return ISO timestamp string for the start of the current news cycle (18:00 MSK cutoff)."""
+    if target_date_str:
+        dt = datetime.strptime(target_date_str, "%Y-%m-%d").replace(tzinfo=MSK_TZ)
+        start_msk = dt.replace(hour=18, minute=0, second=0, microsecond=0) - timedelta(days=1)
+        return start_msk.astimezone(timezone.utc).isoformat()
+        
     now_msk = datetime.now(timezone.utc).astimezone(MSK_TZ)
     today_18msk = now_msk.replace(hour=18, minute=0, second=0, microsecond=0)
     if now_msk >= today_18msk:

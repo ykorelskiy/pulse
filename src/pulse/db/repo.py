@@ -291,7 +291,7 @@ class NewsRepo(BaseRepo):
         except Exception:
             return []
 
-    def get_scored_24h_news(self) -> list[dict[str, Any]]:
+    def get_scored_24h_news(self, target_date_str: str | None = None) -> list[dict[str, Any]]:
         """Fetch scored news items from current active cycle (18:00 MSK boundary).
         
         Only returns items with status 'scored' (already evaluated by LLM).
@@ -300,7 +300,7 @@ class NewsRepo(BaseRepo):
             return []
         try:
             from pulse.publisher.site_publisher import get_active_cycle_start_iso
-            since_iso = get_active_cycle_start_iso()
+            since_iso = get_active_cycle_start_iso(target_date_str)
             all_items: list[dict[str, Any]] = []
             page_size = 1000
             offset = 0
@@ -323,13 +323,13 @@ class NewsRepo(BaseRepo):
             pass
         return self.get_latest_news(limit=200)
 
-    def get_all_24h_news(self) -> list[dict[str, Any]]:
+    def get_all_24h_news(self, target_date_str: str | None = None) -> list[dict[str, Any]]:
         """Fetch ALL news items from current active cycle (18:00 MSK boundary) for audit stats."""
         if not self.client:
             return []
         try:
             from pulse.publisher.site_publisher import get_active_cycle_start_iso
-            since_iso = get_active_cycle_start_iso()
+            since_iso = get_active_cycle_start_iso(target_date_str)
             all_items: list[dict[str, Any]] = []
             page_size = 1000
             offset = 0

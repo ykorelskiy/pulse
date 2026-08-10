@@ -29,7 +29,7 @@ async def run_daily_job() -> str:
     today_str = get_msk_today()
     logger.info("starting_daily_digest_job", date=today_str)
 
-    ranker = TopicRanker()
+    ranker = TopicRanker(target_date_str=today_str)
     top_10, top_50, source_stats = ranker.get_top_curated_digest(items_per_category=10, top_k=10)
     raw_words = ranker.get_top_reader_words(limit=5)
 

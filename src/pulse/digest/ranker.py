@@ -26,10 +26,12 @@ class TopicRanker:
         news_repo: NewsRepo | None = None,
         words_repo: WordsRepo | None = None,
         curator: LLMCurator | None = None,
+        target_date_str: str | None = None,
     ) -> None:
         self.news_repo = news_repo or NewsRepo()
         self.words_repo = words_repo or WordsRepo()
         self.curator = curator or LLMCurator()
+        self.target_date_str = target_date_str
 
     def get_top_curated_digest(
         self,
@@ -60,7 +62,7 @@ class TopicRanker:
                 }
 
         # Audit stats: count items ONLY from active enabled sources
-        all_24h_items = [i for i in self.news_repo.get_all_24h_news() if str(i.get("source_id")) in source_map]
+        all_24h_items = [i for i in self.news_repo.get_all_24h_news(self.target_date_str) if str(i.get("source_id")) in source_map]
         for item in all_24h_items:
             sid = str(item.get("source_id") or "news")
             sname = source_map.get(sid, sid)
@@ -69,7 +71,7 @@ class TopicRanker:
 
         # Ranking: strictly ONLY use scored items from active enabled sources
         raw_items = [
-            i for i in self.news_repo.get_scored_24h_news()
+            i for i in self.news_repo.get_scored_24h_news(self.target_date_str)
             if str(i.get("source_id")) in source_map and i.get("status") == "scored"
         ]
 
