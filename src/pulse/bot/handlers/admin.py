@@ -450,6 +450,58 @@ async def cmd_reset(message: types.Message) -> None:
         await message.answer(f"❌ Ошибка при удалении выпуска: {e}")
 
 
+@router.message(Command("status"))
+async def cmd_status(message: types.Message) -> None:
+    """Show the current status of the target date issue."""
+    if not is_admin(message.from_user):
+        return
+
+    text = message.text or ""
+    parts = text.strip().split()
+    target_date = None
+    if len(parts) > 1 and len(parts[1]) == 10 and parts[1][4] == "-" and parts[1][7] == "-":
+        target_date = parts[1]
+
+    if not target_date:
+        target_date = get_active_issue_date()
+
+    from pulse.db.client import get_supabase_client
+    client = get_supabase_client()
+    try:
+        res = client.table("site_issues").select("*").eq("issue_date", target_date).execute()
+        rows = res.data or []
+        
+        if not rows:
+            await message.answer(
+                f"📊 **Статус выпуска на {target_date}:**\n\n"
+                f"Выпуск абсолютно чист (ни новостей, ни обложки).\n"
+                f"Отправьте боту картинку или нажмите `/prompt`, чтобы начать работу.",
+                parse_mode=ParseMode.MARKDOWN
+            )
+            return
+            
+        row = rows[0]
+        news_data = row.get("news") or []
+        news_count = len(news_data)
+        has_news = news_count > 0
+        has_image = bool(row.get("image_path"))
+        is_confirmed = bool(row.get("confirmed"))
+        is_published = bool(row.get("published"))
+        
+        lines = [
+            f"📊 **Статус выпуска на {target_date}:**\n",
+            f"📰 **Новости зафиксированы:** {'✅ (' + str(news_count) + ' шт)' if has_news else '❌'}",
+            f"🖼 **Обложка загружена:** {'✅' if has_image else '❌'}",
+            f"⏳ **Публикация подтверждена:** {'✅ (Ждет отправки в 20:00)' if is_confirmed else '❌'}",
+            f"🚀 **Опубликовано:** {'✅ (Уже вышло)' if is_published else '❌ (Еще не вышло)'}"
+        ]
+        
+        await message.answer("\n".join(lines), parse_mode=ParseMode.MARKDOWN)
+    except Exception as e:
+        logger.error("cmd_status_failed", error=str(e))
+        await message.answer(f"❌ Ошибка при получении статуса: {e}")
+
+
 @router.message(Command("help"))
 async def cmd_help(message: types.Message) -> None:
     """Show detailed help message for all admin commands."""
@@ -458,12 +510,14 @@ async def cmd_help(message: types.Message) -> None:
 
     help_text = (
         "🤖 **СПРАВОЧНИК КОМАНД АДМИНИСТРАТОРА:**\n\n"
+        "🔸 `/status [дата]` — показать текущий статус подготовки выпуска (зафиксированы ли новости, загружена ли обложка, подтверждена ли публикация).\n"
+        "   └ *Формат даты: `YYYY-MM-DD`. Если без аргумента — использует текущую активную дату.*\n\n"
         "🔸 `/prompt [дата]` — сгенерировать готовый промпт для нейросети с актуальными новостями.\n"
-        "   └ *Формат даты: `YYYY-MM-DD` (например: `/prompt 2026-08-09`). Если без аргумента — использует текущую активную дату.*\n\n"
+        "   └ *Например: `/prompt 2026-08-09`.*\n\n"
         "🔸 `/post [дата]` (или `/preview_post`) — посмотреть, как будет выглядеть текст или готовый пост на выбранный день.\n"
-        "   └ *Формат даты: `YYYY-MM-DD` (например: `/post 2026-08-09`).*\n\n"
+        "   └ *Например: `/post 2026-08-09`.*\n\n"
         "🔸 `/reset [дата]` — **ОБНУЛИТЬ** сохраненный выпуск за этот день.\n"
-        "   └ *Удаляет новости и картинку из базы. Полезно, если вы хотите пересобрать выпуск вечером с новыми новостями. Формат даты: `YYYY-MM-DD`.*\n\n"
+        "   └ *Удаляет новости и картинку из базы. Полезно, если вы хотите пересобрать выпуск вечером с новыми новостями.*\n\n"
         "🔸 `/top [количество]` — показать топ позитивных новостей (с оценками нейросети).\n"
         "   └ *Например: `/top 20` (по умолчанию показывает 15).*\n\n"
         "🔸 `/word <слово>` — добавить слово в список скрытых слов-отгадок.\n"
