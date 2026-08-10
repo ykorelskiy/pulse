@@ -59,7 +59,7 @@ async def run_auto_publish() -> None:
 
     # Mark issue as published in DB
     try:
-        from datetime import timezone
+        from datetime import datetime, timezone
         client.table("site_issues").update({
             "published": True,
             "status": "published",
