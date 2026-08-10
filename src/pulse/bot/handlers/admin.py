@@ -423,3 +423,53 @@ async def cb_confirm_publish(callback: types.CallbackQuery) -> None:
         f"Выпуск выйдет автоматически в **20:00 МСК** во все каналы (TG + VK + Сайт).",
         parse_mode=ParseMode.MARKDOWN,
     )
+
+
+@router.message(Command("reset"))
+async def cmd_reset(message: types.Message) -> None:
+    """Delete the saved issue data for a specific day to allow regenerating it."""
+    if not is_admin(message.from_user):
+        return
+
+    text = message.text or ""
+    parts = text.strip().split()
+    target_date = None
+    if len(parts) > 1 and len(parts[1]) == 10 and parts[1][4] == "-" and parts[1][7] == "-":
+        target_date = parts[1]
+
+    if not target_date:
+        target_date = get_active_issue_date()
+
+    from pulse.db.client import get_supabase_client
+    client = get_supabase_client()
+    try:
+        client.table("site_issues").delete().eq("issue_date", target_date).execute()
+        await message.answer(f"✅ Я успешно **обнулил** сохраненные данные выпуска за `{target_date}`!\n\nМожете присылать новую картинку — бот заново соберет самые свежие новости.", parse_mode=ParseMode.MARKDOWN)
+    except Exception as e:
+        logger.error("cmd_reset_failed", error=str(e))
+        await message.answer(f"❌ Ошибка при удалении выпуска: {e}")
+
+
+@router.message(Command("help"))
+async def cmd_help(message: types.Message) -> None:
+    """Show detailed help message for all admin commands."""
+    if not is_admin(message.from_user):
+        return
+
+    help_text = (
+        "🤖 **СПРАВОЧНИК КОМАНД АДМИНИСТРАТОРА:**\n\n"
+        "🔸 `/prompt [дата]` — сгенерировать готовый промпт для нейросети с актуальными новостями.\n"
+        "   └ *Формат даты: `YYYY-MM-DD` (например: `/prompt 2026-08-09`). Если без аргумента — использует текущую активную дату.*\n\n"
+        "🔸 `/post [дата]` (или `/preview_post`) — посмотреть, как будет выглядеть текст или готовый пост на выбранный день.\n"
+        "   └ *Формат даты: `YYYY-MM-DD` (например: `/post 2026-08-09`).*\n\n"
+        "🔸 `/reset [дата]` — **ОБНУЛИТЬ** сохраненный выпуск за этот день.\n"
+        "   └ *Удаляет новости и картинку из базы. Полезно, если вы хотите пересобрать выпуск вечером с новыми новостями. Формат даты: `YYYY-MM-DD`.*\n\n"
+        "🔸 `/top [количество]` — показать топ позитивных новостей (с оценками нейросети).\n"
+        "   └ *Например: `/top 20` (по умолчанию показывает 15).*\n\n"
+        "🔸 `/word <слово>` — добавить слово в список скрытых слов-отгадок.\n"
+        "   └ *Например: `/word слон`.*\n\n"
+        "🖼 **КАК ОПУБЛИКОВАТЬ ВЫПУСК:**\n"
+        "Просто отправьте боту картинку. Бот сам обрежет её, прикрепит свежие новости (если их еще нет в базе на сегодня) и выдаст кнопку «Подтвердить публикацию в 20:00»."
+    )
+    await message.answer(help_text, parse_mode=ParseMode.MARKDOWN)
+
