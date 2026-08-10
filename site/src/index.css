@@ -28,37 +28,28 @@ body {
   overflow-x: hidden;
 }
 
-/* Main Layout Container (Natural Unified Scroll) */
+/* Main Layout Container */
 .main-container {
-  max-width: 1380px;
-  margin: 0 auto;
-  padding: 30px 24px;
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 44px;
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 60px;
+  padding: 20px 40px;
   transition: all 0.4s ease;
 }
 
-@media (min-width: 1024px) {
-  .main-container {
-    grid-template-columns: 1.15fr 0.85fr;
-  }
-
-  .main-container.news-mode-active {
-    grid-template-columns: 320px 1fr;
-    max-width: 1540px;
-  }
-}
-
 /* ------------------------------------------------------------- */
-/* Massive Wood Base (Calendar Stand)                           */
-/* ------------------------------------------------------------- */
+/* Massive Wood Base (Calendar Stand) - 16:9 Aspect Ratio */
 .massive-wood-base {
-  max-width: 95vw;
-  width: 1600px; /* limits on ultra-wides */
-  margin: 3vh auto;
+  aspect-ratio: 16 / 9;
+  max-height: 98vh;
+  max-width: 98vw;
+  width: auto;
+  height: auto;
+  margin: 1vh auto;
   background: #3e2723 url('/bg-wood.jpg') center/cover no-repeat;
-  border-radius: 12px;
+  border-radius: 16px;
   box-shadow: 
     0 40px 80px rgba(0, 0, 0, 0.9),
     inset 0 4px 10px rgba(255, 255, 255, 0.1),
@@ -83,38 +74,119 @@ body {
 }
 
 /* ------------------------------------------------------------- */
+/* Top Brass Plate "ПУЛЬС ДНЯ"                                  */
+/* ------------------------------------------------------------- */
+.top-brass-plate-container {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding-top: 4%;
+  position: relative;
+  z-index: 20;
+}
+
+.pulse-brass-plate {
+  padding: 12px 40px;
+  background: #0f172a; /* Dark blue enamel */
+  border: 4px solid #b48608; /* Brass border */
+  border-radius: 8px;
+  position: relative;
+  box-shadow: 
+    0 25px 40px -10px rgba(0, 243, 255, 0.7), /* Neon glow under the plate onto wood */
+    0 10px 20px rgba(0,0,0,0.8),
+    inset 0 4px 8px rgba(0,0,0,0.6),
+    inset 0 0 15px rgba(15, 30, 60, 0.9);
+  animation: neonPulse 3s infinite alternate;
+}
+
+@keyframes neonPulse {
+  0% { box-shadow: 0 20px 30px -10px rgba(0, 243, 255, 0.5), 0 10px 20px rgba(0,0,0,0.8), inset 0 4px 8px rgba(0,0,0,0.6); }
+  100% { box-shadow: 0 35px 50px -5px rgba(0, 243, 255, 0.9), 0 10px 20px rgba(0,0,0,0.8), inset 0 4px 8px rgba(0,0,0,0.6); }
+}
+
+.pulse-brass-plate::before,
+.pulse-brass-plate::after {
+  content: '';
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  background: #785303;
+  border-radius: 50%;
+  box-shadow: inset 0 1px 1px rgba(0,0,0,0.8);
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.pulse-brass-plate::before { left: 8px; }
+.pulse-brass-plate::after { right: 8px; }
+
+.pulse-brass-text {
+  font-family: 'Source Sans 3', sans-serif;
+  font-weight: 800;
+  font-size: 42px;
+  letter-spacing: 0.1em;
+  color: #fbbf24; /* Brass color */
+  text-transform: uppercase;
+  /* Raised brass effect */
+  text-shadow: 
+    1px 1px 1px #ffed4a,
+    -1px -1px 1px #785303,
+    0px 2px 4px rgba(0,0,0,0.8);
+}
+
+/* ------------------------------------------------------------- */
 /* Brass Social Buttons                                         */
 /* ------------------------------------------------------------- */
 .social-brass-buttons {
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 24px;
-  padding: 16px 0 32px 0;
+  gap: 20px;
+  padding: 0 0 3%;
   z-index: 10;
 }
 
 .brass-square-btn {
-  width: 54px;
-  height: 54px;
+  width: 50px;
+  height: 50px;
   border-radius: 12px;
-  background: #0f172a; /* Dark blue enamel */
-  border: 4px solid #b48608; /* Brass border */
-  box-shadow: 
-    0 4px 10px rgba(0,0,0,0.8),
-    inset 0 4px 8px rgba(0,0,0,0.6),
-    inset 0 0 10px rgba(15, 30, 60, 0.9); /* Enamel depth */
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #fbbf24; /* Brass icon color */
   transition: all 0.2s ease;
   cursor: pointer;
   text-decoration: none;
   position: relative;
 }
 
-/* Fake screws in corners */
+/* Active Button (Enamel + Brass + Neon Underglow) */
+.brass-square-btn.active-neon {
+  background: #0f172a; /* Dark blue enamel */
+  border: 3px solid #b48608; /* Brass border */
+  color: #fbbf24; /* Brass icon color */
+  box-shadow: 
+    0 15px 25px -5px rgba(0, 243, 255, 0.6), /* Neon glow onto wood */
+    0 4px 10px rgba(0,0,0,0.8),
+    inset 0 4px 8px rgba(0,0,0,0.6);
+  animation: neonPulseSmall 3s infinite alternate;
+}
+
+@keyframes neonPulseSmall {
+  0% { box-shadow: 0 10px 20px -5px rgba(0, 243, 255, 0.4), 0 4px 10px rgba(0,0,0,0.8), inset 0 4px 8px rgba(0,0,0,0.6); }
+  100% { box-shadow: 0 20px 30px 0px rgba(0, 243, 255, 0.8), 0 4px 10px rgba(0,0,0,0.8), inset 0 4px 8px rgba(0,0,0,0.6); }
+}
+
+/* Inactive Button (Just dull brass, no enamel, no glow) */
+.brass-square-btn.inactive {
+  background: linear-gradient(135deg, #b39b5b, #7a6332);
+  border: 2px solid #5a4a25;
+  color: #382c18; /* Dark embossed/debossed icon */
+  box-shadow: 
+    0 4px 8px rgba(0,0,0,0.8),
+    inset 0 2px 4px rgba(255,255,255,0.2);
+}
+
+/* Fake screws */
 .brass-square-btn::before,
 .brass-square-btn::after {
   content: '';
@@ -126,21 +198,17 @@ body {
   box-shadow: inset 0 1px 1px rgba(0,0,0,0.8);
 }
 
-.brass-square-btn::before {
-  top: 4px; left: 4px;
-}
-.brass-square-btn::after {
-  bottom: 4px; right: 4px;
-}
+.brass-square-btn::before { top: 4px; left: 4px; }
+.brass-square-btn::after { bottom: 4px; right: 4px; }
 
-.brass-square-btn:hover {
+.brass-square-btn.active-neon:hover {
   transform: translateY(2px);
-  box-shadow: 
-    0 2px 5px rgba(0,0,0,0.8),
-    inset 0 4px 12px rgba(0,0,0,0.8),
-    inset 0 0 10px rgba(15, 30, 60, 0.9);
   color: #fde68a;
   border-color: #d97706;
+}
+.brass-square-btn.inactive:hover {
+  transform: translateY(2px);
+  background: linear-gradient(135deg, #c7af6a, #8c733a);
 }
 
 .brass-icon {
@@ -492,59 +560,53 @@ body {
   transform: translateX(4px);
 }
 
-.left-section {
-  transition: transform 0.45s cubic-bezier(0.4, 0, 0.2, 1), width 0.45s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.main-container,
-.right-section,
-.paper-sheet,
-.month-grid-container,
-.news-panel-container {
-  transition: all 0.45s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.main-container.news-mode-active .left-section {
-  transform: scale(0.68);
-  transform-origin: top left;
-  width: 147%;
-}
-
 /* ------------------------------------------------------------- */
-/* News List Panel (Right Column View - 720px Fixed Frame)       */
+/* News Overlay (Glassmorphism Full Screen)                      */
 /* ------------------------------------------------------------- */
-.news-panel-container {
-  background: rgba(18, 11, 7, 0.95);
-  border: 1px solid rgba(250, 204, 21, 0.45);
-  border-radius: 14px;
-  padding: 18px 24px 22px;
-  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.85);
-  backdrop-filter: blur(12px);
-  height: 720px;
-  max-height: 720px;
-  overflow: hidden;
+.news-fullscreen-overlay {
+  position: absolute;
+  top: 2.5%;
+  left: 2.5%;
+  width: 95%;
+  height: 95%;
+  z-index: 100;
+  border-radius: 20px;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 30px 60px rgba(0,0,0,0.8);
   display: flex;
-  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
 }
 
-.fade-in-panel {
-  animation: fadeInPanel 0.35s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+.news-overlay-content {
+  width: 100%;
+  height: 100%;
+  padding: 24px 32px;
+  overflow-y: auto;
+}
+
+.fade-in-overlay {
+  animation: fadeInOverlay 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 
 .closing-exit {
   opacity: 0;
-  transform: translateY(-8px);
+  transform: scale(0.98);
   transition: opacity 0.3s ease, transform 0.3s ease;
 }
 
-@keyframes fadeInPanel {
+@keyframes fadeInOverlay {
   from {
     opacity: 0;
-    transform: translateY(8px);
+    transform: scale(0.98);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: scale(1);
   }
 }
 
@@ -567,8 +629,8 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 10px;
-  padding-bottom: 8px;
+  margin-bottom: 6px;
+  padding-bottom: 6px;
   border-bottom: 1px dashed rgba(250, 204, 21, 0.35);
 }
 
@@ -577,7 +639,7 @@ body {
   flex-direction: column;
   justify-content: flex-start;
   flex: 1;
-  gap: 4px;
+  gap: 2px;
   padding-top: 2px;
 }
 
@@ -586,7 +648,7 @@ body {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 3px 6px;
+  padding: 2px 6px;
   border-radius: 6px;
   transition: background 0.2s ease, transform 0.15s ease;
   text-decoration: none;
@@ -602,8 +664,8 @@ body {
 }
 
 .news-clean-item.clickable-news-row:hover .news-clean-text {
-  color: #fef08a;
-  text-decoration: underline;
+  color: #00f3ff;
+  text-shadow: 0 0 8px rgba(0, 243, 255, 0.6);
 }
 
 .news-content-left {
@@ -625,10 +687,10 @@ body {
 
 .news-clean-text {
   font-family: 'Neucha', cursive;
-  font-size: 18px;
+  font-size: 17px;
   font-weight: 700;
   color: #fffdf7;
-  line-height: 1.25;
+  line-height: 1.15;
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
 }
 
@@ -639,24 +701,33 @@ body {
   align-items: center;
   justify-content: center;
   gap: 5px;
-  background: rgba(250, 204, 21, 0.15);
-  border: 1px solid rgba(250, 204, 21, 0.45);
-  color: var(--accent-brass);
-  font-family: 'Neucha', cursive;
-  font-size: 16px;
-  font-weight: 700;
-  padding: 2px 8px;
+  background: linear-gradient(135deg, #b39b5b, #7a6332);
+  border: 2px solid #5a4a25;
   border-radius: 6px;
+  padding: 2px 8px;
   text-decoration: none;
   transition: all 0.2s ease;
-  text-align: center;
+  box-shadow: 
+    0 2px 4px rgba(0,0,0,0.8),
+    inset 0 1px 2px rgba(255,255,255,0.2);
+}
+
+.news-source-text {
+  font-family: 'Source Sans 3', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: #00f3ff; /* Neon blue */
+  text-transform: uppercase;
+  text-shadow: 0 0 5px rgba(0, 243, 255, 0.8), 0 0 10px rgba(0, 243, 255, 0.5);
+  letter-spacing: 0.05em;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .news-source-fixed-btn:hover {
-  background: var(--accent-brass);
-  color: #120c08;
-  box-shadow: 0 0 12px rgba(250, 204, 21, 0.6);
+  background: linear-gradient(135deg, #c7af6a, #8c733a);
+  transform: translateY(-1px);
 }
 
 .news-source-fixed-placeholder {
@@ -857,6 +928,15 @@ body {
   font-size: 24px;
   font-weight: 700;
   color: #d1c2a5;
+}
+
+/* ------------------------------------------------------------- */
+/* News List Panel (Inner Content)                               */
+/* ------------------------------------------------------------- */
+.news-panel-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 }
 
 /* ------------------------------------------------------------- */
