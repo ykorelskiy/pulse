@@ -339,6 +339,67 @@ async def cmd_preview_post(message: types.Message) -> None:
         await message.answer(f"❌ Ошибка при подготовке предпросмотра: {e}")
 
 
+MONTHS_RU = {
+    1: "ЯНВАРЯ", 2: "ФЕВРАЛЯ", 3: "МАРТА", 4: "АПРЕЛЯ",
+    5: "МАЯ", 6: "ИЮНЯ", 7: "ИЮЛЯ", 8: "АВГУСТА",
+    9: "СЕНТЯБРЯ", 10: "ОКТЯБРЯ", 11: "НОЯБРЯ", 12: "ДЕКАБРЯ"
+}
+
+@router.message(Command("prompt"))
+async def cmd_prompt(message: types.Message) -> None:
+    """Generate the exact prompt text for the image generator."""
+    if not is_admin(message.from_user):
+        return
+
+    text = message.text or ""
+    parts = text.strip().split()
+    target_date = None
+    if len(parts) > 1 and len(parts[1]) == 10 and parts[1][4] == "-" and parts[1][7] == "-":
+        target_date = parts[1]
+
+    if not target_date:
+        target_date = get_active_issue_date()
+
+    try:
+        ranker = TopicRanker()
+        _, top_50, _ = ranker.get_top_curated_digest(items_per_category=10, top_k=10)
+        news_items = top_50[:15]
+        
+        news_list = []
+        for i, item in enumerate(news_items, 1):
+            headline = (item.get("headline") or item.get("title") or item.get("text") or "").strip()
+            headline = " ".join(headline.split())  # remove newlines
+            if headline:
+                news_list.append(f"{i}. {headline}")
+        
+        news_str = "\n".join(news_list)
+        
+        year, month, day = target_date.split("-")
+        month_name = MONTHS_RU[int(month)]
+        formatted_date = f"{int(day)} {month_name} {year}"
+        
+        prompt_text = (
+            "Используй прикреплённый файл pulse_day_master_prompt.md как главный промпт.\n\n"
+            "Используй первый референс для точного внешнего вида робота.\n"
+            "Используй второй и третий референсы только для художественной стилистики и принципа композиции.\n\n"
+            "ПЕРЕМЕННАЯ ТЕКУЩЕЙ ДАТЫ:\n"
+            f"CURRENT_DATE = {formatted_date}\n\n"
+            "ПЕРЕМЕННАЯ НОВОСТЕЙ:\n"
+            "NEWS = \n\n"
+            f"{news_str}\n\n"
+            "Строго следуй master prompt.\n"
+            "Особенно важно: дата CURRENT_DATE имеет приоритет над любыми датами, которые видны на референсных изображениях."
+        )
+        
+        # Send without any markdown parsing so it's a raw string, easy to copy exactly
+        await message.answer(prompt_text, parse_mode=None, disable_web_page_preview=True)
+
+    except Exception as e:
+        logger.error("cmd_prompt_failed", error=str(e))
+        await message.answer(f"❌ Ошибка при генерации промпта: {e}")
+
+
+
 @router.callback_query(F.data.startswith("confirm_publish_"))
 async def cb_confirm_publish(callback: types.CallbackQuery) -> None:
     """Confirm publication — sets confirmed=true in DB. Actual publish happens at 20:00 MSK via cron."""
