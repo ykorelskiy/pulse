@@ -246,3 +246,43 @@ class TopicRanker:
         while len(result) < limit:
             result.append(fallbacks[len(result) % len(fallbacks)])
         return result[:limit]
+
+    def get_legacy_vs_new_comparison(self, limit: int = 15) -> list[dict[str, Any]]:
+        """Return side-by-side comparison of items under New (primary) vs Legacy model.
+
+        New Model: Enforces strict CoT sentiment + victims pre-filter.
+        Legacy Model: Raw total score ranking without victims pre-filter.
+        """
+        all_scored = self.news_repo.get_scored_24h_news(self.target_date_str)
+        
+        # New model filtering
+        _, new_top50, _ = self.get_top_curated_digest(top_k=50)
+        
+        # Legacy ranking (ignoring status rejected_victims / has_victims)
+        legacy_items = []
+        for i in all_scored:
+            rel = i.get("relevance") or 3
+            sig = i.get("significance") or 2
+            v = i.get("virality") or 0
+            score = rel + sig + int(v)
+            item_copy = dict(i)
+            item_copy["legacy_score"] = score
+            legacy_items.append(item_copy)
+        
+        legacy_items.sort(key=lambda x: x["legacy_score"], reverse=True)
+        legacy_rank_map = {str(item.get("id")): rank for rank, item in enumerate(legacy_items, 1)}
+
+        comparison = []
+        for rank_new, item in enumerate(new_top50[:limit], 1):
+            iid = str(item.get("id"))
+            rank_legacy = legacy_rank_map.get(iid, "N/A")
+            comparison.append({
+                "new_rank": rank_new,
+                "legacy_rank": rank_legacy,
+                "headline": item.get("headline", ""),
+                "score": item.get("total_score", 0),
+                "url": item.get("url", ""),
+            })
+
+        return comparison
+

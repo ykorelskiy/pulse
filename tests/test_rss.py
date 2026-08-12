@@ -40,4 +40,5 @@ def test_source_registry_loads_config():
     assert len(adapters) >= 3
 
     source_ids = [a.source_id for a in adapters]
-    assert "rbc_news" in source_ids
+    assert "lenta_news" in source_ids
+

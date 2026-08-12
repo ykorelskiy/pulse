@@ -90,51 +90,107 @@ async def send_split_message(message: types.Message, text: str) -> None:
 
 @router.message(Command("top"))
 async def cmd_top_news(message: types.Message) -> None:
-    """Send top N curated news items with rating scores to admin."""
+    """Send top N curated news items with rating scores to admin.
+
+    Usage:
+    /top -> top 15 news by New Model
+    /top 20 -> top 20 news by New Model
+    /top compare -> compare ranks between New Model (primary) and Legacy Model
+    """
     if not is_admin(message.from_user):
         return
 
     text = (message.text or "").strip()
     parts = text.split()
+    is_compare = len(parts) > 1 and parts[1].lower() == "compare"
     limit = 15
     if len(parts) > 1 and parts[1].isdigit():
         limit = min(max(int(parts[1]), 1), 50)
 
     target_date = get_active_issue_date()
-    await message.answer(f"📊 **Формирую ТОП-{limit} позитивных новостей (дата выпуска: {target_date})...**")
+    mode_str = "сравнение Новая vs Старая модель" if is_compare else f"ТОП-{limit}"
+    await message.answer(f"📊 **Формирую {mode_str} позитивных новостей (дата выпуска: {target_date})...**")
 
     try:
         ranker = TopicRanker(target_date_str=target_date)
-        _, top_50, _ = ranker.get_top_curated_digest(items_per_category=10, top_k=50)
 
-        lines = [
-            f"📊 **ТОП-{limit} ПОЗИТИВНЫХ НОВОСТЕЙ ДНЯ ({target_date})**\n",
-            "📌 *Аналитическая подборка с баллами рейтинга:*\n",
-        ]
+        if is_compare:
+            comparison = ranker.get_legacy_vs_new_comparison(limit=limit)
+            lines = [
+                f"📊 **СРАВНЕНИЕ МОДЕЛЕЙ РАНЖИРОВАНИЯ ({target_date})**\n",
+                "🥇 **Новая модель (CoT + Сентимент редактора)** vs 📜 **Старая модель**\n",
+            ]
+            for item in comparison:
+                new_r = item["new_rank"]
+                leg_r = item["legacy_rank"]
+                hl = item["headline"]
+                score = item["score"]
+                lines.append(f"#{new_r} (в старой: #{leg_r}) | ⭐ **{score:.1f}** — {hl}")
+            lines.append("\n💡 *Новая модель используется как ведущая для отбора новостей.*")
+        else:
+            _, top_50, _ = ranker.get_top_curated_digest(items_per_category=10, top_k=50)
 
-        for idx, item in enumerate(top_50[:limit], 1):
-            raw_title = item.get("headline") or item.get("title") or item.get("text") or ""
-            headline = raw_title.strip()
-            url = item.get("url", "")
-            score = item.get("total_score") or item.get("score") or 0.0
+            lines = [
+                f"📊 **ТОП-{limit} ПОЗИТИВНЫХ НОВОСТЕЙ ДНЯ ({target_date})**\n",
+                "📌 *Аналитическая подборка Новой модели (CoT + Сентимент редактора):*\n",
+            ]
 
-            score_str = f"⭐ **{score:.1f}**" if isinstance(score, (int, float)) and score > 0 else "⭐ **—**"
+            for idx, item in enumerate(top_50[:limit], 1):
+                raw_title = item.get("headline") or item.get("title") or item.get("text") or ""
+                headline = raw_title.strip()
+                url = item.get("url", "")
+                score = item.get("total_score") or item.get("score") or 0.0
 
-            if url and headline:
-                lines.append(f"{idx}. {score_str} — [{headline}]({url})")
-            elif headline:
-                lines.append(f"{idx}. {score_str} — {headline}")
-            elif url:
-                lines.append(f"{idx}. {score_str} — [{url}]({url})")
+                score_str = f"⭐ **{score:.1f}**" if isinstance(score, (int, float)) and score > 0 else "⭐ **—**"
 
-        lines.append("")
-        lines.append("💡 *Увеличить количество: `/top 20` или `/top 30`*")
+                if url and headline:
+                    lines.append(f"{idx}. {score_str} — [{headline}]({url})")
+                elif headline:
+                    lines.append(f"{idx}. {score_str} — {headline}")
+                elif url:
+                    lines.append(f"{idx}. {score_str} — [{url}]({url})")
+
+            lines.append("")
+            lines.append("💡 *Сравнить с базовой моделью: `/top compare` | Изменить кол-во: `/top 20`*")
 
         full_response = "\n".join(lines)
         await send_split_message(message, full_response)
     except Exception as e:
         logger.error("cmd_top_failed", error=str(e))
         await message.answer(f"❌ Ошибка при получении ТОП новостей: {e}")
+
+
+@router.message(Command("publish"))
+async def cmd_publish_now(message: types.Message) -> None:
+    """Instantly publish today's ready issue to all channels (TG + VK + Website)."""
+    if not is_admin(message.from_user):
+        return
+
+    target_date = get_active_issue_date()
+    await message.answer(f"🚀 **Проверяю готовность выпуска от {target_date} и запускаю публикацию...**")
+
+    try:
+        from pulse.jobs.auto_publish import run_auto_publish
+        from pulse.db.client import get_supabase_client
+
+        client = get_supabase_client()
+        res = client.table("site_issues").select("*").eq("issue_date", target_date).execute()
+        rows = res.data or []
+
+        if not rows or not rows[0].get("image_path"):
+            await message.answer(
+                f"❌ **Выпуск от {target_date} еще не сформирован!**\n\n"
+                "Для публикации необходимо сначала вызвать `/daily` и загрузить обложку."
+            )
+            return
+
+        # Run publish job immediately
+        await run_auto_publish()
+        await message.answer(f"✅ **Команда публикации выпуска от {target_date} успешно выполнена!**")
+    except Exception as e:
+        logger.error("cmd_publish_now_failed", error=str(e))
+        await message.answer(f"❌ Ошибка при выполнении публикации: {e}")
+
 
 
 @router.message(Command("word"))

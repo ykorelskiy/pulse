@@ -8,9 +8,14 @@ from pulse.db.client import get_supabase_client
 
 def test_source_distribution():
     """Verify that ALL sources have items in DB and scoring works evenly."""
-    repo = NewsRepo()
     client = get_supabase_client()
+    if not client:
+        import pytest
+        pytest.skip("Supabase client is unconfigured locally — skipping live DB distribution check")
+
+    repo = NewsRepo()
     since = (datetime.now(timezone.utc) - timedelta(hours=24)).isoformat()
+
 
     # 1. Count total items per source in DB (paginated)
     all_data = []

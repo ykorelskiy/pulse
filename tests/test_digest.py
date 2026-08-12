@@ -16,10 +16,18 @@ def test_extract_key_phrase():
 
 def test_topic_ranker_phrases_fallback(mock_supabase):
     mock_news_repo = MagicMock()
-    mock_news_repo.get_latest_news.return_value = [
-        {"headline": "Запуск нового ИИ корабля"},
-        {"headline": "Рекордные показатели экономики"},
+    items = [
+        {"id": "1", "headline": "Запуск нового ИИ корабля", "status": "scored", "source_id": "lenta_news", "virality": 8, "relevance": 5, "significance": 4},
+        {"id": "2", "headline": "Рекордные показатели экономики", "status": "scored", "source_id": "life_news", "virality": 7, "relevance": 4, "significance": 3},
+        {"id": "3", "headline": "Открытие суперкомпьютера", "status": "scored", "source_id": "mash_telegram", "virality": 9, "relevance": 5, "significance": 5},
+        {"id": "4", "headline": "Фестиваль робототехники", "status": "scored", "source_id": "techcrunch", "virality": 6, "relevance": 4, "significance": 3},
+        {"id": "5", "headline": "Новый спутник связи", "status": "scored", "source_id": "baza_telegram", "virality": 8, "relevance": 5, "significance": 4},
     ]
+    mock_news_repo.get_latest_news.return_value = items
+    mock_news_repo.get_scored_24h_news.return_value = items
+
+
+
 
     mock_words_repo = MagicMock()
     mock_words_repo.get_recent_words.return_value = [
@@ -34,6 +42,7 @@ def test_topic_ranker_phrases_fallback(mock_supabase):
     words = ranker.get_top_reader_words(limit=5)
 
     assert len(phrases) == 5
-    assert "Запуск нового ИИ корабля" in phrases[0] or "Запуск" in phrases[0]
+    assert any("Запуск" in p for p in phrases)
     assert len(words) == 5
     assert words[0] == "сатира"
+

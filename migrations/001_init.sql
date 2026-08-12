@@ -137,10 +137,23 @@ create table if not exists events (
 );
 
 -- ==============================================================================
--- INDEXES
+-- INDEXES & SECURITY
 -- ==============================================================================
 create index if not exists idx_words_user_date on words(user_id, created_at desc);
 create unique index if not exists idx_news_items_url on news_items(url);
 create unique index if not exists idx_issues_date on issues(date);
 create index if not exists idx_guesses_issue_votes on guesses(issue_id, votes desc);
 create index if not exists idx_events_type_date on events(event_type, created_at desc);
+
+-- Enable RLS on all public tables by default
+alter table sources enable row level security;
+alter table news_items enable row level security;
+alter table users enable row level security;
+alter table words enable row level security;
+alter table guesses enable row level security;
+alter table issues enable row level security;
+alter table briefs_history enable row level security;
+alter table reserve_posters enable row level security;
+alter table orders enable row level security;
+alter table events enable row level security;
+

@@ -1,5 +1,5 @@
 import React from "react";
-import { ArrowLeft, ExternalLink, Newspaper } from "lucide-react";
+import { ArrowLeft, Newspaper } from "lucide-react";
 import { getFormattedHeaderDate } from "../utils/dateUtils";
 import type { NewsItem } from "../types";
 
@@ -92,8 +92,7 @@ export const NewsListPanel: React.FC<NewsListPanelProps> = ({
 
                 {hasUrl ? (
                   <span className="news-source-fixed-btn">
-                    <span>{sourceLabel}</span>
-                    <ExternalLink size={12} />
+                    <span className="news-source-text">{sourceLabel}</span>
                   </span>
                 ) : (
                   <div className="news-source-fixed-placeholder" />
