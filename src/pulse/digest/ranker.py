@@ -69,10 +69,13 @@ class TopicRanker:
             if sname in source_stats_map:
                 source_stats_map[sname]["analyzed"] += 1
 
-        # Ranking: strictly ONLY use scored items from active enabled sources
+        # Ranking: strictly ONLY use scored items from active enabled sources (exclude pessimized/negative scored)
         raw_items = [
             i for i in self.news_repo.get_scored_24h_news(self.target_date_str)
-            if str(i.get("source_id")) in source_map and i.get("status") == "scored"
+            if str(i.get("source_id")) in source_map
+            and i.get("status") == "scored"
+            and i.get("status") not in ("excluded", "rejected")
+            and float(i.get("total_score") or i.get("score") or 0.0) >= 0
         ]
 
         now = datetime.now(timezone.utc)

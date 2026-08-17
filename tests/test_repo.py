@@ -48,9 +48,24 @@ def test_news_repo_add_article(mock_supabase):
 
     repo = NewsRepo(client=mock_supabase)
     res = repo.add_article("rbc", "Тест новость", "http://ex.com/1")
-
     assert res["headline"] == "Тест новость"
     mock_supabase.table.assert_called_with("news_items")
+
+
+def test_news_repo_pessimize_article(mock_supabase):
+    mock_res = MagicMock()
+    mock_res.data = [{"id": "uuid-99", "status": "excluded", "total_score": -100.0}]
+    mock_supabase.table().update().eq().execute.return_value = mock_res
+
+    repo = NewsRepo(client=mock_supabase)
+    res = repo.pessimize_article(news_id="uuid-99", reason="user_pessimized")
+    assert res is True
+    mock_supabase.table.assert_called_with("news_items")
+    mock_supabase.table().update.assert_called_with({
+        "status": "excluded",
+        "total_score": -100.0,
+        "editorial_feedback": "user_pessimized",
+    })
 
 
 def test_issues_repo_duplicate_error(mock_supabase):

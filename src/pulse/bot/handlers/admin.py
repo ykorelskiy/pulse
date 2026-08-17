@@ -325,6 +325,16 @@ async def cb_remove_selected_top_items(query: types.CallbackQuery) -> None:
     row = res.data[0]
     current_news: list[dict[str, Any]] = row.get("news") or []
 
+    # Pessimize selected items in news_items table
+    from pulse.db.repo import NewsRepo
+    news_repo = NewsRepo()
+
+    removed_items = [item for idx, item in enumerate(current_news, 1) if idx in selected_indices]
+    for item in removed_items:
+        news_id = item.get("id")
+        url = item.get("url") or item.get("link")
+        news_repo.pessimize_article(news_id=news_id, url=url, reason="user_pessimized_from_top")
+
     # Filter out selected items
     filtered_news = [item for idx, item in enumerate(current_news, 1) if idx not in selected_indices]
 

@@ -395,6 +395,38 @@ class NewsRepo(BaseRepo):
         except Exception:
             pass
 
+    def pessimize_article(
+        self,
+        news_id: str | int | None = None,
+        url: str | None = None,
+        headline_hash: str | None = None,
+        reason: str = "user_pessimized",
+    ) -> bool:
+        """Pessimize a news item by setting status='excluded', total_score=-100.0 in Supabase."""
+        if not self.client:
+            return False
+
+        pessimize_data = {
+            "status": "excluded",
+            "total_score": -100.0,
+            "editorial_feedback": reason,
+        }
+
+        try:
+            if news_id:
+                self.client.table("news_items").update(pessimize_data).eq("id", news_id).execute()
+                return True
+            if url:
+                clean_u = self.clean_url(url)
+                self.client.table("news_items").update(pessimize_data).eq("url", clean_u).execute()
+                return True
+            if headline_hash:
+                self.client.table("news_items").update(pessimize_data).eq("headline_hash", headline_hash).execute()
+                return True
+        except Exception:
+            pass
+        return False
+
     def mark_items_used_and_archived(
         self,
         issue_id: str,
