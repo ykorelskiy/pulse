@@ -54,7 +54,7 @@ def test_news_repo_add_article(mock_supabase):
 
 def test_news_repo_pessimize_article(mock_supabase):
     mock_res = MagicMock()
-    mock_res.data = [{"id": "uuid-99", "status": "excluded", "total_score": -100.0}]
+    mock_res.data = [{"id": "uuid-99", "status": "excluded"}]
     mock_supabase.table().update().eq().execute.return_value = mock_res
 
     repo = NewsRepo(client=mock_supabase)
@@ -63,8 +63,6 @@ def test_news_repo_pessimize_article(mock_supabase):
     mock_supabase.table.assert_called_with("news_items")
     mock_supabase.table().update.assert_called_with({
         "status": "excluded",
-        "total_score": -100.0,
-        "editorial_feedback": "user_pessimized",
     })
 
 

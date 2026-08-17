@@ -402,14 +402,12 @@ class NewsRepo(BaseRepo):
         headline_hash: str | None = None,
         reason: str = "user_pessimized",
     ) -> bool:
-        """Pessimize a news item by setting status='excluded', total_score=-100.0 in Supabase."""
+        """Pessimize a news item by setting status='excluded' in Supabase."""
         if not self.client:
             return False
 
         pessimize_data = {
             "status": "excluded",
-            "total_score": -100.0,
-            "editorial_feedback": reason,
         }
 
         try:
@@ -423,8 +421,9 @@ class NewsRepo(BaseRepo):
             if headline_hash:
                 self.client.table("news_items").update(pessimize_data).eq("headline_hash", headline_hash).execute()
                 return True
-        except Exception:
-            pass
+        except Exception as e:
+            from pulse.logging import get_logger
+            get_logger("pulse.db.repo").error("pessimize_article_failed", error=str(e), news_id=news_id, url=url)
         return False
 
     def mark_items_used_and_archived(

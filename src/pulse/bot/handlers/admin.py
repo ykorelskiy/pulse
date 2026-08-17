@@ -356,90 +356,91 @@ async def cb_remove_selected_top_items(query: types.CallbackQuery) -> None:
         await query.answer("Не выбрано ни одной новости", show_alert=True)
         return
 
-    from pulse.db.client import get_supabase_client
-    client = get_supabase_client()
-    res = client.table("site_issues").select("*").eq("issue_date", issue_date).execute()
-    if not res.data:
-        await query.answer("Выпуск не найден в базе данных", show_alert=True)
-        return
-
-    row = res.data[0]
-    current_news: list[dict[str, Any]] = row.get("news") or []
-
-    # Pessimize selected items in news_items table
-    from pulse.db.repo import NewsRepo
-    news_repo = NewsRepo()
-
-    removed_items = [item for idx, item in enumerate(current_news, 1) if idx in selected_indices]
-    for item in removed_items:
-        news_id = item.get("id")
-        url = item.get("url") or item.get("link")
-        news_repo.pessimize_article(news_id=news_id, url=url, reason="user_pessimized_from_top")
-
-    # Filter out selected items
-    filtered_news = [item for idx, item in enumerate(current_news, 1) if idx not in selected_indices]
-
-    # Fill back to 15 if reserve news items available
     try:
-        ranker = TopicRanker(target_date_str=issue_date)
-        _, top_50, _ = ranker.get_top_curated_digest(items_per_category=10, top_k=50)
+        from pulse.db.client import get_supabase_client
+        client = get_supabase_client()
+        res = client.table("site_issues").select("*").eq("issue_date", issue_date).execute()
+        if not res.data:
+            await query.answer("Выпуск не найден в базе данных", show_alert=True)
+            return
 
-        existing_urls = {
-            n.get("url") or n.get("link")
-            for n in filtered_news
-            if n.get("url") or n.get("link")
-        }
-        for candidate in top_50:
-            if len(filtered_news) >= 15:
-                break
-            cand_url = candidate.get("url") or candidate.get("link")
-            if cand_url and cand_url not in existing_urls:
-                filtered_news.append(candidate)
-                existing_urls.add(cand_url)
-    except Exception as e:
-        logger.warning("failed_replenishing_reserve_news", error=str(e))
+        row = res.data[0]
+        current_news: list[dict[str, Any]] = row.get("news") or []
 
-    # Update site_issues table in Supabase
-    try:
-        client.table("site_issues").update({"news": filtered_news}).eq("issue_date", issue_date).execute()
-    except Exception as e:
-        logger.error("failed_updating_news_after_removal", error=str(e))
+        # Pessimize selected items in news_items table
+        from pulse.db.repo import NewsRepo
+        news_repo = NewsRepo()
 
-    # Rebuild caption text
-    builder = CaptionBuilder()
-    caption = builder.build_caption(
-        date_str=issue_date,
-        title=row.get("title"),
-        news_items=filtered_news,
-    )
+        removed_items = [item for idx, item in enumerate(current_news, 1) if idx in selected_indices]
+        for item in removed_items:
+            news_id = item.get("id")
+            url = item.get("url") or item.get("link")
+            news_repo.pessimize_article(news_id=news_id, url=url, reason="user_pessimized_from_top")
 
-    text_body = caption
-    if text_body.startswith("**ПУЛЬС ДНЯ") or text_body.startswith("🖼 **ПУЛЬС ДНЯ"):
-        lines = text_body.split("\n", 2)
-        text_body = lines[-1].lstrip()
+        # Filter out selected items
+        filtered_news = [item for idx, item in enumerate(current_news, 1) if idx not in selected_indices]
 
-    img_p = row.get("image_path")
-    has_cover = bool(img_p and img_p != "pending")
-
-    new_kbd = build_top_selection_keyboard(
-        issue_date=issue_date,
-        total_count=len(filtered_news),
-        selected_indices=set(),
-        show_confirm_button=has_cover,
-    )
-
-    if query.message:
+        # Fill back to 15 if reserve news items available
         try:
-            await query.message.edit_text(
-                text=text_body,
-                parse_mode=ParseMode.MARKDOWN,
-                disable_web_page_preview=True,
-                reply_markup=new_kbd,
-            )
-        except Exception as e:
-            logger.error("failed_editing_text_after_remove", error=str(e))
+            ranker = TopicRanker(target_date_str=issue_date)
+            _, top_50, _ = ranker.get_top_curated_digest(items_per_category=10, top_k=50)
 
-    await query.answer(f"Удалено {len(selected_indices)} новостей. ТОП обновлен!", show_alert=False)
+            existing_urls = {
+                n.get("url") or n.get("link")
+                for n in filtered_news
+                if n.get("url") or n.get("link")
+            }
+            for candidate in top_50:
+                if len(filtered_news) >= 15:
+                    break
+                cand_url = candidate.get("url") or candidate.get("link")
+                if cand_url and cand_url not in existing_urls:
+                    filtered_news.append(candidate)
+                    existing_urls.add(cand_url)
+        except Exception as e:
+            logger.warning("failed_replenishing_reserve_news", error=str(e))
+
+        # Update site_issues table in Supabase
+        client.table("site_issues").update({"news": filtered_news}).eq("issue_date", issue_date).execute()
+
+        # Rebuild caption text
+        builder = CaptionBuilder()
+        caption = builder.build_caption(
+            date_str=issue_date,
+            title=row.get("title"),
+            news_items=filtered_news,
+        )
+
+        text_body = caption
+        if text_body.startswith("**ПУЛЬС ДНЯ") or text_body.startswith("🖼 **ПУЛЬС ДНЯ"):
+            lines = text_body.split("\n", 2)
+            text_body = lines[-1].lstrip()
+
+        img_p = row.get("image_path")
+        has_cover = bool(img_p and img_p != "pending")
+
+        new_kbd = build_top_selection_keyboard(
+            issue_date=issue_date,
+            total_count=len(filtered_news),
+            selected_indices=set(),
+            show_confirm_button=has_cover,
+        )
+
+        if query.message:
+            try:
+                await query.message.edit_text(
+                    text=text_body,
+                    parse_mode=ParseMode.MARKDOWN,
+                    disable_web_page_preview=True,
+                    reply_markup=new_kbd,
+                )
+            except Exception as e:
+                logger.error("failed_editing_text_after_remove", error=str(e))
+
+        await query.answer(f"Удалено {len(selected_indices)} новостей. ТОП обновлен!", show_alert=False)
+    except Exception as e:
+        logger.error("cb_remove_selected_top_items_failed", error=str(e))
+        await query.answer(f"❌ Ошибка при удалении новости: {e}", show_alert=True)
 
 
 @router.message(F.photo)
