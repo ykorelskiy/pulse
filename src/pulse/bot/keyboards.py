@@ -7,6 +7,7 @@ def build_top_selection_keyboard(
     issue_date: str,
     total_count: int,
     selected_indices: list[int] | set[int] | None = None,
+    show_confirm_button: bool = False,
 ) -> InlineKeyboardMarkup:
     """Build interactive checkbox grid keyboard for news item selection.
 
@@ -14,6 +15,7 @@ def build_top_selection_keyboard(
         issue_date: Date string YYYY-MM-DD.
         total_count: Total number of news items in current list.
         selected_indices: Set/list of 1-based indices currently selected for removal.
+        show_confirm_button: Whether to include the confirm publish button (True when cover photo is uploaded).
 
     Returns:
         InlineKeyboardMarkup: Formatted inline keyboard.
@@ -56,13 +58,16 @@ def build_top_selection_keyboard(
             )
         )
 
-    action_row.append(
-        InlineKeyboardButton(
-            text="✅ Подтвердить в 20:00",
-            callback_data=f"confirm_publish_{issue_date}",
+    if show_confirm_button:
+        action_row.append(
+            InlineKeyboardButton(
+                text="✅ Подтвердить в 20:00",
+                callback_data=f"confirm_publish_{issue_date}",
+            )
         )
-    )
 
-    inline_keyboard.append(action_row)
+    if action_row:
+        inline_keyboard.append(action_row)
+
     return InlineKeyboardMarkup(inline_keyboard=inline_keyboard)
 

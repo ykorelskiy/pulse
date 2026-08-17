@@ -166,7 +166,11 @@ async def cmd_top_news(message: types.Message) -> None:
             lines.append("")
             lines.append("💡 *Сравнить с базовой моделью: `/top compare` | Изменить кол-во: `/top 20`*")
 
-            top_kbd = build_top_selection_keyboard(issue_date=target_date, total_count=len(top_items))
+            top_kbd = build_top_selection_keyboard(
+                issue_date=target_date,
+                total_count=len(top_items),
+                show_confirm_button=False,
+            )
 
             # Sync top_items into site_issues table for target_date so callback queries find them
             import contextlib
@@ -176,6 +180,9 @@ async def cmd_top_news(message: types.Message) -> None:
                 client.table("site_issues").upsert({
                     "issue_date": target_date,
                     "title": f"Пульс дня — {target_date[8:10]}.{target_date[5:7]}.{target_date[:4]}",
+                    "image_path": "pending",
+                    "thumb480_path": "pending",
+                    "thumb128_path": "pending",
                     "news": top_items,
                     "status": "pending",
                 }, on_conflict="issue_date").execute()
@@ -262,6 +269,7 @@ async def send_full_post_preview(
     publish_kbd = build_top_selection_keyboard(
         issue_date=target_date,
         total_count=len(news_items),
+        show_confirm_button=True,
     )
 
     [y, m, d] = target_date.split("-")
@@ -306,15 +314,22 @@ async def cb_toggle_top_item(query: types.CallbackQuery) -> None:
 
     from pulse.db.client import get_supabase_client
     client = get_supabase_client()
-    res = client.table("site_issues").select("news").eq("issue_date", issue_date).execute()
+    res = client.table("site_issues").select("news,image_path").eq("issue_date", issue_date).execute()
     total_count = 15
-    if res.data and res.data[0].get("news"):
-        total_count = len(res.data[0]["news"])
+    has_cover = False
+    if res.data:
+        r = res.data[0]
+        if r.get("news"):
+            total_count = len(r["news"])
+        img_p = r.get("image_path")
+        if img_p and img_p != "pending":
+            has_cover = True
 
     new_kbd = build_top_selection_keyboard(
         issue_date=issue_date,
         total_count=total_count,
         selected_indices=selected,
+        show_confirm_button=has_cover,
     )
 
     try:
@@ -366,7 +381,7 @@ async def cb_remove_selected_top_items(query: types.CallbackQuery) -> None:
 
     # Fill back to 15 if reserve news items available
     try:
-        ranker = TopicRanker()
+        ranker = TopicRanker(target_date_str=issue_date)
         _, top_50, _ = ranker.get_top_curated_digest(items_per_category=10, top_k=50)
 
         existing_urls = {
@@ -403,10 +418,14 @@ async def cb_remove_selected_top_items(query: types.CallbackQuery) -> None:
         lines = text_body.split("\n", 2)
         text_body = lines[-1].lstrip()
 
+    img_p = row.get("image_path")
+    has_cover = bool(img_p and img_p != "pending")
+
     new_kbd = build_top_selection_keyboard(
         issue_date=issue_date,
         total_count=len(filtered_news),
         selected_indices=set(),
+        show_confirm_button=has_cover,
     )
 
     if query.message:
