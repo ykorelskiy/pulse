@@ -7,6 +7,7 @@ from aiogram import Bot, F, Router, types
 from aiogram.enums import ParseMode
 from aiogram.filters import Command
 
+from pulse.bot.keyboards import build_top_selection_keyboard
 from pulse.briefsmith.builder import BriefBuilder
 from pulse.config import get_config
 from pulse.db.repo import WordsRepo
@@ -224,22 +225,17 @@ async def send_full_post_preview(
     image_path = row.get("image_path") or row.get("thumb480_path")
     img_url = f"https://zyoznyeqvorhztrpgdjw.supabase.co/storage/v1/object/public/pulse-covers/{image_path}"
 
+    news_items = row.get("news") or []
     builder = CaptionBuilder()
     caption = builder.build_caption(
         date_str=target_date,
         title=row.get("title"),
-        news_items=row.get("news") or [],
+        news_items=news_items,
     )
 
-    publish_kbd = types.InlineKeyboardMarkup(
-        inline_keyboard=[
-            [
-                types.InlineKeyboardButton(
-                    text="✅ Подтвердить публикацию в 20:00",
-                    callback_data=f"confirm_publish_{target_date}",
-                )
-            ]
-        ]
+    publish_kbd = build_top_selection_keyboard(
+        issue_date=target_date,
+        total_count=len(news_items),
     )
 
     [y, m, d] = target_date.split("-")
@@ -262,6 +258,133 @@ async def send_full_post_preview(
         disable_web_page_preview=True,
         reply_markup=publish_kbd,
     )
+
+
+@router.callback_query(F.data.startswith("top_t:"))
+async def cb_toggle_top_item(query: types.CallbackQuery) -> None:
+    """Toggle news item selection checkbox in top keyboard."""
+    parts = (query.data or "").split(":")
+    if len(parts) < 3:
+        await query.answer()
+        return
+
+    issue_date = parts[1]
+    toggled_idx = int(parts[2])
+    csv_selected = parts[3] if len(parts) > 3 and parts[3] != "none" else ""
+
+    selected = {int(x) for x in csv_selected.split(",") if x.isdigit()}
+    if toggled_idx in selected:
+        selected.remove(toggled_idx)
+    else:
+        selected.add(toggled_idx)
+
+    from pulse.db.client import get_supabase_client
+    client = get_supabase_client()
+    res = client.table("site_issues").select("news").eq("issue_date", issue_date).execute()
+    total_count = 15
+    if res.data and res.data[0].get("news"):
+        total_count = len(res.data[0]["news"])
+
+    new_kbd = build_top_selection_keyboard(
+        issue_date=issue_date,
+        total_count=total_count,
+        selected_indices=selected,
+    )
+
+    try:
+        if query.message:
+            await query.message.edit_reply_markup(reply_markup=new_kbd)
+    except Exception:
+        pass
+    await query.answer()
+
+
+@router.callback_query(F.data.startswith("top_rm:"))
+async def cb_remove_selected_top_items(query: types.CallbackQuery) -> None:
+    """Remove selected news items from top issue and update DB + message text."""
+    parts = (query.data or "").split(":")
+    if len(parts) < 3:
+        await query.answer("Не выбрано ни одной новости", show_alert=True)
+        return
+
+    issue_date = parts[1]
+    csv_selected = parts[2] if len(parts) > 2 and parts[2] != "none" else ""
+    selected_indices = {int(x) for x in csv_selected.split(",") if x.isdigit()}
+
+    if not selected_indices:
+        await query.answer("Не выбрано ни одной новости", show_alert=True)
+        return
+
+    from pulse.db.client import get_supabase_client
+    client = get_supabase_client()
+    res = client.table("site_issues").select("*").eq("issue_date", issue_date).execute()
+    if not res.data:
+        await query.answer("Выпуск не найден в базе данных", show_alert=True)
+        return
+
+    row = res.data[0]
+    current_news: list[dict[str, Any]] = row.get("news") or []
+
+    # Filter out selected items
+    filtered_news = [item for idx, item in enumerate(current_news, 1) if idx not in selected_indices]
+
+    # Fill back to 15 if reserve news items available
+    try:
+        ranker = TopicRanker()
+        _, top_50, _ = ranker.get_top_curated_digest(items_per_category=10, top_k=50)
+
+        existing_urls = {
+            n.get("url") or n.get("link")
+            for n in filtered_news
+            if n.get("url") or n.get("link")
+        }
+        for candidate in top_50:
+            if len(filtered_news) >= 15:
+                break
+            cand_url = candidate.get("url") or candidate.get("link")
+            if cand_url and cand_url not in existing_urls:
+                filtered_news.append(candidate)
+                existing_urls.add(cand_url)
+    except Exception as e:
+        logger.warning("failed_replenishing_reserve_news", error=str(e))
+
+    # Update site_issues table in Supabase
+    try:
+        client.table("site_issues").update({"news": filtered_news}).eq("issue_date", issue_date).execute()
+    except Exception as e:
+        logger.error("failed_updating_news_after_removal", error=str(e))
+
+    # Rebuild caption text
+    builder = CaptionBuilder()
+    caption = builder.build_caption(
+        date_str=issue_date,
+        title=row.get("title"),
+        news_items=filtered_news,
+    )
+
+    text_body = caption
+    if text_body.startswith("**ПУЛЬС ДНЯ") or text_body.startswith("🖼 **ПУЛЬС ДНЯ"):
+        lines = text_body.split("\n", 2)
+        text_body = lines[-1].lstrip()
+
+    new_kbd = build_top_selection_keyboard(
+        issue_date=issue_date,
+        total_count=len(filtered_news),
+        selected_indices=set(),
+    )
+
+    if query.message:
+        try:
+            await query.message.edit_text(
+                text=text_body,
+                parse_mode=ParseMode.MARKDOWN,
+                disable_web_page_preview=True,
+                reply_markup=new_kbd,
+            )
+        except Exception as e:
+            logger.error("failed_editing_text_after_remove", error=str(e))
+
+    await query.answer(f"Удалено {len(selected_indices)} новостей. ТОП обновлен!", show_alert=False)
 
 
 @router.message(F.photo)
