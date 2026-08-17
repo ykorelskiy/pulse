@@ -56,8 +56,12 @@ def is_admin(user: types.User | None) -> bool:
     return False
 
 
-async def send_split_message(message: types.Message, text: str) -> None:
-    """Send text split cleanly across messages with fallback parsing and sleep delay."""
+async def send_split_message(
+    message: types.Message,
+    text: str,
+    reply_markup: types.InlineKeyboardMarkup | None = None,
+) -> None:
+    """Send text split cleanly across messages with fallback parsing, sleep delay, and optional reply_markup."""
     no_preview = types.LinkPreviewOptions(is_disabled=True)
 
     lines = text.split("\n")
@@ -81,11 +85,17 @@ async def send_split_message(message: types.Message, text: str) -> None:
     if current_chunk:
         try:
             await message.answer(
-                current_chunk, parse_mode=ParseMode.MARKDOWN, link_preview_options=no_preview
+                current_chunk,
+                parse_mode=ParseMode.MARKDOWN,
+                link_preview_options=no_preview,
+                reply_markup=reply_markup,
             )
         except Exception:
             await message.answer(
-                current_chunk, parse_mode=None, link_preview_options=no_preview
+                current_chunk,
+                parse_mode=None,
+                link_preview_options=no_preview,
+                reply_markup=reply_markup,
             )
 
 
@@ -114,6 +124,7 @@ async def cmd_top_news(message: types.Message) -> None:
 
     try:
         ranker = TopicRanker(target_date_str=target_date)
+        top_kbd: types.InlineKeyboardMarkup | None = None
 
         if is_compare:
             comparison = ranker.get_legacy_vs_new_comparison(limit=limit)
@@ -130,13 +141,14 @@ async def cmd_top_news(message: types.Message) -> None:
             lines.append("\n💡 *Новая модель используется как ведущая для отбора новостей.*")
         else:
             _, top_50, _ = ranker.get_top_curated_digest(items_per_category=10, top_k=50)
+            top_items = top_50[:limit]
 
             lines = [
-                f"📊 **ТОП-{limit} ПОЗИТИВНЫХ НОВОСТЕЙ ДНЯ ({target_date})**\n",
+                f"📊 **ТОП-{len(top_items)} ПОЗИТИВНЫХ НОВОСТЕЙ ДНЯ ({target_date})**\n",
                 "📌 *Аналитическая подборка Новой модели (CoT + Сентимент редактора):*\n",
             ]
 
-            for idx, item in enumerate(top_50[:limit], 1):
+            for idx, item in enumerate(top_items, 1):
                 raw_title = item.get("headline") or item.get("title") or item.get("text") or ""
                 headline = raw_title.strip()
                 url = item.get("url", "")
@@ -154,8 +166,22 @@ async def cmd_top_news(message: types.Message) -> None:
             lines.append("")
             lines.append("💡 *Сравнить с базовой моделью: `/top compare` | Изменить кол-во: `/top 20`*")
 
+            top_kbd = build_top_selection_keyboard(issue_date=target_date, total_count=len(top_items))
+
+            # Sync top_items into site_issues table for target_date so callback queries find them
+            import contextlib
+            with contextlib.suppress(Exception):
+                from pulse.db.client import get_supabase_client
+                client = get_supabase_client()
+                client.table("site_issues").upsert({
+                    "issue_date": target_date,
+                    "title": f"Пульс дня — {target_date[8:10]}.{target_date[5:7]}.{target_date[:4]}",
+                    "news": top_items,
+                    "status": "pending",
+                }, on_conflict="issue_date").execute()
+
         full_response = "\n".join(lines)
-        await send_split_message(message, full_response)
+        await send_split_message(message, full_response, reply_markup=top_kbd)
     except Exception as e:
         logger.error("cmd_top_failed", error=str(e))
         await message.answer(f"❌ Ошибка при получении ТОП новостей: {e}")
