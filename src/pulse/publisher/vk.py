@@ -114,60 +114,82 @@ class VKPublisher:
                     jpeg_bytes = jpeg_io.getvalue()
                     logger.info("vk_image_converted_to_jpeg", size_bytes=len(jpeg_bytes))
 
-                    # 2. Get Wall Upload Server URL
-                    upload_server_url = "https://api.vk.com/method/photos.getWallUploadServer"
-                    params = {
-                        "group_id": gid,
-                        "access_token": self.access_token,
-                        "v": VK_API_VERSION,
-                    }
-                    res_server = await client.get(upload_server_url, params=params)
-                    data_server = res_server.json()
+                    # 2 & 3. Get Wall Upload Server URL and upload with retries
+                    max_retries = 3
+                    last_error: Exception | None = None
 
-                    if "response" not in data_server or "upload_url" not in data_server["response"]:
-                        err_msg = data_server.get("error", {}).get("error_msg", str(data_server))
-                        logger.error("vk_get_upload_server_failed", error=err_msg)
-                        raise RuntimeError(f"VK photos.getWallUploadServer failed: {err_msg}")
+                    for attempt in range(1, max_retries + 1):
+                        try:
+                            upload_server_url = "https://api.vk.com/method/photos.getWallUploadServer"
+                            params = {
+                                "group_id": gid,
+                                "access_token": self.access_token,
+                                "v": VK_API_VERSION,
+                            }
+                            res_server = await client.get(upload_server_url, params=params)
+                            data_server = res_server.json()
 
-                    upload_url = data_server["response"]["upload_url"]
+                            if "response" not in data_server or "upload_url" not in data_server["response"]:
+                                err_msg = data_server.get("error", {}).get("error_msg", str(data_server))
+                                logger.error("vk_get_upload_server_failed", attempt=attempt, error=err_msg)
+                                raise RuntimeError(f"VK photos.getWallUploadServer failed: {err_msg}")
 
-                    # 3. Upload JPEG photo bytes to VK Upload Server
-                    files = {"photo": ("cover.jpg", jpeg_bytes, "image/jpeg")}
-                    res_upload = await client.post(upload_url, files=files)
-                    upload_result = res_upload.json()
+                            upload_url = data_server["response"]["upload_url"]
 
-                    if not upload_result.get("photo") or upload_result.get("photo") == "[]":
-                        logger.error("vk_upload_server_empty_photo", response=upload_result)
-                        raise RuntimeError("VK Upload Server returned empty photo field.")
+                            # Upload JPEG photo bytes to VK Upload Server
+                            files = {"photo": ("cover.jpg", jpeg_bytes, "image/jpeg")}
+                            res_upload = await client.post(upload_url, files=files)
+                            upload_result = res_upload.json()
 
-                    # 4. Save Wall Photo
-                    save_url = "https://api.vk.com/method/photos.saveWallPhoto"
-                    save_params = {
-                        "group_id": gid,
-                        "photo": upload_result["photo"],
-                        "server": upload_result["server"],
-                        "hash": upload_result["hash"],
-                        "access_token": self.access_token,
-                        "v": VK_API_VERSION,
-                    }
-                    res_save = await client.post(save_url, data=save_params)
-                    data_save = res_save.json()
+                            if not upload_result.get("photo") or upload_result.get("photo") == "[]":
+                                logger.warning(
+                                    "vk_upload_server_empty_photo_retrying",
+                                    attempt=attempt,
+                                    response=upload_result,
+                                )
+                                raise RuntimeError("VK Upload Server returned empty photo field.")
 
-                    if "response" not in data_save or len(data_save["response"]) == 0:
-                        err_msg = data_save.get("error", {}).get("error_msg", str(data_save))
-                        logger.error("vk_save_wall_photo_failed", error=err_msg)
-                        raise RuntimeError(f"VK photos.saveWallPhoto failed: {err_msg}")
+                            # 4. Save Wall Photo
+                            save_url = "https://api.vk.com/method/photos.saveWallPhoto"
+                            save_params = {
+                                "group_id": gid,
+                                "photo": upload_result["photo"],
+                                "server": upload_result["server"],
+                                "hash": upload_result["hash"],
+                                "access_token": self.access_token,
+                                "v": VK_API_VERSION,
+                            }
+                            res_save = await client.post(save_url, data=save_params)
+                            data_save = res_save.json()
 
-                    saved_photo = data_save["response"][0]
-                    owner_id = saved_photo.get("owner_id")
-                    photo_id = saved_photo.get("id")
-                    access_key = saved_photo.get("access_key")
+                            if "response" not in data_save or len(data_save["response"]) == 0:
+                                err_msg = data_save.get("error", {}).get("error_msg", str(data_save))
+                                logger.error("vk_save_wall_photo_failed", attempt=attempt, error=err_msg)
+                                raise RuntimeError(f"VK photos.saveWallPhoto failed: {err_msg}")
 
-                    photo_attachment_id = f"photo{owner_id}_{photo_id}"
-                    if access_key:
-                        photo_attachment_id += f"_{access_key}"
+                            saved_photo = data_save["response"][0]
+                            owner_id = saved_photo.get("owner_id")
+                            photo_id = saved_photo.get("id")
+                            access_key = saved_photo.get("access_key")
 
-                    logger.info("vk_photo_uploaded_attachment_id", attachment_id=photo_attachment_id)
+                            photo_attachment_id = f"photo{owner_id}_{photo_id}"
+                            if access_key:
+                                photo_attachment_id += f"_{access_key}"
+
+                            logger.info(
+                                "vk_photo_uploaded_attachment_id",
+                                attachment_id=photo_attachment_id,
+                                attempt=attempt,
+                            )
+                            last_error = None
+                            break
+                        except Exception as retry_err:
+                            last_error = retry_err
+                            if attempt < max_retries:
+                                await asyncio.sleep(2.0 * attempt)
+
+                    if last_error is not None:
+                        raise last_error
 
                 except Exception as e:
                     logger.error("vk_photo_upload_critical_error", error=str(e))

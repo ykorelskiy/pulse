@@ -57,14 +57,18 @@ async def run_auto_publish() -> None:
         title=title,
     )
 
-    # Mark issue as published in DB
+    # Mark issue status in DB depending on publishing success
+    all_success = all(res.get("success", False) for res in pub_results.values())
+    final_status = "published" if all_success else "partially_published"
+
     try:
         from datetime import datetime, timezone
         client.table("site_issues").update({
-            "published": True,
-            "status": "published",
+            "published": True if all_success else False,
+            "status": final_status,
             "published_at": datetime.now(timezone.utc).isoformat(),
         }).eq("issue_date", today_str).execute()
+        logger.info("updated_issue_status_in_db", date=today_str, status=final_status, all_success=all_success)
     except Exception as e:
         logger.error("failed_updating_published_status_in_db", error=str(e))
 
