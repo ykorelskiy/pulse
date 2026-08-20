@@ -117,6 +117,8 @@ pm2 start pulse-bot
 30 * * * *  — pulse.jobs.intake fetch (В XX:30 каждого часа: сбор новостей из RSS/TG лент)
 45 * * * *  — pulse.jobs.intake score (В XX:45 каждого часа: нейрооценка Gemini + Watchdog)
 0 15 * * *  — pulse.jobs.daily (18:00 МСК / 15:00 UTC: авто-рассылка 15 новостей автору)
-30 16 * * * — pulse.jobs.remind_publish (19:30 МСК / 16:30 UTC: авто-напоминание)
+30 16 * * * — pulse.jobs.remind_publish --minutes-left 30 (19:30 МСК: алерт «30 мин до публикации»)
+45 16 * * * — pulse.jobs.remind_publish --minutes-left 15 (19:45 МСК: алерт «15 мин до публикации»)
+55 16 * * * — pulse.jobs.remind_publish --minutes-left 5  (19:55 МСК: алерт «5 мин до публикации»)
 0 17 * * *  — pulse.jobs.auto_publish (20:00 МСК / 17:00 UTC: автопубликация в TG + VK + Сайт)
 ```
