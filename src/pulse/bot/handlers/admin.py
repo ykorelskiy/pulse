@@ -15,7 +15,7 @@ from pulse.digest.ranker import TopicRanker
 from pulse.logging import get_logger
 from pulse.publisher.caption import CaptionBuilder
 from pulse.publisher.orchestrator import MultiPublisherOrchestrator
-from pulse.publisher.site_publisher import get_active_issue_date, get_msk_today, process_and_upload_cover
+from pulse.publisher.site_publisher import get_active_issue_date, get_msk_today, has_valid_cover, process_and_upload_cover
 
 logger = get_logger("pulse.bot.admin")
 router = Router()
@@ -211,7 +211,7 @@ async def cmd_publish_now(message: types.Message) -> None:
         res = client.table("site_issues").select("*").eq("issue_date", target_date).execute()
         rows = res.data or []
 
-        if not rows or not rows[0].get("image_path"):
+        if not rows or not has_valid_cover(rows[0].get("image_path")):
             await message.answer(
                 f"❌ **Выпуск от {target_date} еще не сформирован!**\n\n"
                 "Для публикации необходимо сначала вызвать `/daily` и загрузить обложку."

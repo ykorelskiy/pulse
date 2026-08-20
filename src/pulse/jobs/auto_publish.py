@@ -10,7 +10,7 @@ from pulse.config import get_config
 from pulse.db.client import get_supabase_client
 from pulse.logging import configure_logging, get_logger
 from pulse.publisher.orchestrator import MultiPublisherOrchestrator
-from pulse.publisher.site_publisher import get_msk_today
+from pulse.publisher.site_publisher import get_msk_today, has_valid_cover
 
 
 async def run_auto_publish() -> None:
@@ -33,8 +33,29 @@ async def run_auto_publish() -> None:
     row = rows[0]
     image_path = row.get("image_path")
 
-    if not image_path:
+    if not has_valid_cover(image_path):
         logger.info("no_cover_uploaded_skipping_publish", date=today_str)
+
+        # Alert admin that publication was skipped
+        target_chat_id = cfg.ADMIN_CHAT_ID
+        if target_chat_id and str(target_chat_id) != "123456789":
+            bot = Bot(token=cfg.TELEGRAM_BOT_TOKEN)
+            try:
+                await bot.send_message(
+                    chat_id=target_chat_id,
+                    text=(
+                        f"❌ **ПУБЛИКАЦИЯ НЕ СОСТОЯЛАСЬ!**\n\n"
+                        f"Выпуск «Пульс дня — {today_str}» не опубликован:\n"
+                        f"🖼 Обложка не была загружена.\n\n"
+                        f"Загрузите обложку и выполните `/publish` для ручной публикации."
+                    ),
+                    parse_mode=ParseMode.MARKDOWN,
+                )
+            except Exception as e:
+                logger.error("failed_sending_skip_alert", error=str(e))
+            finally:
+                await bot.session.close()
+
         return
 
     # Check if issue was already published today

@@ -57,6 +57,11 @@ def get_active_cycle_start_iso(target_date_str: str | None = None) -> str:
     return start_msk.astimezone(timezone.utc).isoformat()
 
 
+def has_valid_cover(image_path: str | None) -> bool:
+    """Check if image_path represents a real uploaded cover (not a placeholder)."""
+    return bool(image_path and image_path != "pending")
+
+
 def resize_and_convert_to_webp(image_bytes: bytes, max_long_edge: int, quality: int = 80) -> bytes:
     """Resize image so its long edge <= max_long_edge and convert to WebP format."""
     with Image.open(io.BytesIO(image_bytes)) as img:
